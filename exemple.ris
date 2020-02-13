@@ -1,0 +1,6 @@
+boolean[][] toto = true; //comment
+int tata = 6;
+void test;
+int fact(int n) {
+    
+}

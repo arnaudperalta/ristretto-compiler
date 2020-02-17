@@ -23,61 +23,9 @@ typedef unsigned char u1;
 typedef unsigned short u2;
 typedef unsigned int u4;
 
-/* ---------- Structures ---------- */
+/* ---------- Structure ---------- */
 
 typedef struct constant_pool constant_pool;
-
-struct _Utf8_info {
-    u1 tag;
-    u2 length;
-    u1 *bytes;
-} const Utf8_info_default = { CONSTANT_Utf8, 0 };
-typedef struct _Utf8_info Utf8_info;
-
-struct _Class_info {
-    u1 tag;
-    u2 name_index;
-} const Class_info_default = { CONSTANT_Class, 0 };
-typedef struct _Class_info Class_info;
-
-struct _NameAndType_info {
-    u1 tag;
-    u2 name_index;
-    u2 descriptor_index;
-} const NameAndType_info_default = { CONSTANT_NameAndType, 0, 0 };
-typedef struct _NameAndType_info NameAndType_info;
-
-struct _Fieldref_info {
-    u1 tag;
-    u2 class_index;
-    u2 name_and_type_index;
-} const Fieldref_info_default = { CONSTANT_Fieldref, 0, 0 };
-typedef struct _Fieldref_info Fieldref_info;
-
-struct _Methodref_info {
-    u1 tag;
-    u2 class_index;
-    u2 name_and_type_index;
-} const Methodref_info_default = { CONSTANT_Methodref, 0, 0 };
-typedef struct _Methodref_info Methodref_info;
-
-struct _String_info {
-    u1 tag;
-    u2 string_index;
-} const String_info_default = { CONSTANT_String, 0 };
-typedef struct _String_info String_info;
-
-struct _Integer_info {
-    u1 tag;
-    u4 bytes;
-} const Integer_info_default = { CONSTANT_Integer, 0 };
-typedef struct _Integer_info Integer_info;
-
-struct _Float_info {
-    u1 tag;
-    u4 bytes;
-} const Float_info_default = { CONSTANT_Float, 0 };
-typedef struct _Float_info Float_info;
 
 /* ---------- Fonctions --------- */
 
@@ -116,9 +64,5 @@ extern u2 constant_pool_count(constant_pool *ptr);
 // Affiche l'état de la structure
 extern void constant_pool_debug(constant_pool *ptr);
 
-extern NameAndType_info *new_nameandtype(u2 name, u2 desc);
-extern Class_info *new_class(u2 l);
-extern Utf8_info *new_utf8(char *string);
-extern Methodref_info *new_methodref(u2 index, u2 name);
 
 #endif

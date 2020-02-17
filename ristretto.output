@@ -1,0 +1,362 @@
+Terminals which are not used
+
+   END_OF_FILE
+   OPERATOR
+
+
+Grammar
+
+    0 $accept: S $end
+
+    1 S: Variable_declar S
+    2  | Function_declar S
+    3  | /* empty */
+
+    4 Variable_declar: Type IDENTIFIER ASSIGNMENT Constructeur PV
+    5                | Type IDENTIFIER PV
+
+    6 Constructeur: BOOLCONS
+    7             | FLOATCONS
+    8             | INTCONS
+
+    9 Function_declar: Type IDENTIFIER Function_param PV
+   10                | Type IDENTIFIER Function_param OPEN_BRA Function_body CLOSE_BRA
+
+   11 Function_param: OPEN_PAR Type CLOSE_PAR
+   12               | OPEN_PAR Type IDENTIFIER CLOSE_PAR
+   13               | OPEN_PAR Type IDENTIFIER VIRG Function_param CLOSE_PAR
+   14               | Type IDENTIFIER
+
+   15 Function_body: /* empty */
+
+   16 Type: TYPE
+   17     | TYPE ARRAY
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+error (256)
+TYPE (258) 16 17
+IDENTIFIER (259) 4 5 9 10 12 13 14
+ARRAY (260) 17
+BOOLCONS (261) 6
+INTCONS (262) 8
+FLOATCONS (263) 7
+PV (264) 4 5 9
+VIRG (265) 13
+END_OF_FILE (266)
+ASSIGNMENT (267) 4
+OPERATOR (268)
+OPEN_PAR (269) 11 12 13
+CLOSE_PAR (270) 11 12 13
+OPEN_BRA (271) 10
+CLOSE_BRA (272) 10
+
+
+Nonterminals, with rules where they appear
+
+$accept (18)
+    on left: 0
+S (19)
+    on left: 1 2 3, on right: 0 1 2
+Variable_declar (20)
+    on left: 4 5, on right: 1
+Constructeur (21)
+    on left: 6 7 8, on right: 4
+Function_declar (22)
+    on left: 9 10, on right: 2
+Function_param (23)
+    on left: 11 12 13 14, on right: 9 10 13
+Function_body (24)
+    on left: 15, on right: 10
+Type (25)
+    on left: 16 17, on right: 4 5 9 10 11 12 13 14
+
+
+state 0
+
+    0 $accept: . S $end
+
+    TYPE  shift, and go to state 1
+
+    $default  reduce using rule 3 (S)
+
+    S                go to state 2
+    Variable_declar  go to state 3
+    Function_declar  go to state 4
+    Type             go to state 5
+
+
+state 1
+
+   16 Type: TYPE .
+   17     | TYPE . ARRAY
+
+    ARRAY  shift, and go to state 6
+
+    $default  reduce using rule 16 (Type)
+
+
+state 2
+
+    0 $accept: S . $end
+
+    $end  shift, and go to state 7
+
+
+state 3
+
+    1 S: Variable_declar . S
+
+    TYPE  shift, and go to state 1
+
+    $default  reduce using rule 3 (S)
+
+    S                go to state 8
+    Variable_declar  go to state 3
+    Function_declar  go to state 4
+    Type             go to state 5
+
+
+state 4
+
+    2 S: Function_declar . S
+
+    TYPE  shift, and go to state 1
+
+    $default  reduce using rule 3 (S)
+
+    S                go to state 9
+    Variable_declar  go to state 3
+    Function_declar  go to state 4
+    Type             go to state 5
+
+
+state 5
+
+    4 Variable_declar: Type . IDENTIFIER ASSIGNMENT Constructeur PV
+    5                | Type . IDENTIFIER PV
+    9 Function_declar: Type . IDENTIFIER Function_param PV
+   10                | Type . IDENTIFIER Function_param OPEN_BRA Function_body CLOSE_BRA
+
+    IDENTIFIER  shift, and go to state 10
+
+
+state 6
+
+   17 Type: TYPE ARRAY .
+
+    $default  reduce using rule 17 (Type)
+
+
+state 7
+
+    0 $accept: S $end .
+
+    $default  accept
+
+
+state 8
+
+    1 S: Variable_declar S .
+
+    $default  reduce using rule 1 (S)
+
+
+state 9
+
+    2 S: Function_declar S .
+
+    $default  reduce using rule 2 (S)
+
+
+state 10
+
+    4 Variable_declar: Type IDENTIFIER . ASSIGNMENT Constructeur PV
+    5                | Type IDENTIFIER . PV
+    9 Function_declar: Type IDENTIFIER . Function_param PV
+   10                | Type IDENTIFIER . Function_param OPEN_BRA Function_body CLOSE_BRA
+
+    TYPE        shift, and go to state 1
+    PV          shift, and go to state 11
+    ASSIGNMENT  shift, and go to state 12
+    OPEN_PAR    shift, and go to state 13
+
+    Function_param  go to state 14
+    Type            go to state 15
+
+
+state 11
+
+    5 Variable_declar: Type IDENTIFIER PV .
+
+    $default  reduce using rule 5 (Variable_declar)
+
+
+state 12
+
+    4 Variable_declar: Type IDENTIFIER ASSIGNMENT . Constructeur PV
+
+    BOOLCONS   shift, and go to state 16
+    INTCONS    shift, and go to state 17
+    FLOATCONS  shift, and go to state 18
+
+    Constructeur  go to state 19
+
+
+state 13
+
+   11 Function_param: OPEN_PAR . Type CLOSE_PAR
+   12               | OPEN_PAR . Type IDENTIFIER CLOSE_PAR
+   13               | OPEN_PAR . Type IDENTIFIER VIRG Function_param CLOSE_PAR
+
+    TYPE  shift, and go to state 1
+
+    Type  go to state 20
+
+
+state 14
+
+    9 Function_declar: Type IDENTIFIER Function_param . PV
+   10                | Type IDENTIFIER Function_param . OPEN_BRA Function_body CLOSE_BRA
+
+    PV        shift, and go to state 21
+    OPEN_BRA  shift, and go to state 22
+
+
+state 15
+
+   14 Function_param: Type . IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 23
+
+
+state 16
+
+    6 Constructeur: BOOLCONS .
+
+    $default  reduce using rule 6 (Constructeur)
+
+
+state 17
+
+    8 Constructeur: INTCONS .
+
+    $default  reduce using rule 8 (Constructeur)
+
+
+state 18
+
+    7 Constructeur: FLOATCONS .
+
+    $default  reduce using rule 7 (Constructeur)
+
+
+state 19
+
+    4 Variable_declar: Type IDENTIFIER ASSIGNMENT Constructeur . PV
+
+    PV  shift, and go to state 24
+
+
+state 20
+
+   11 Function_param: OPEN_PAR Type . CLOSE_PAR
+   12               | OPEN_PAR Type . IDENTIFIER CLOSE_PAR
+   13               | OPEN_PAR Type . IDENTIFIER VIRG Function_param CLOSE_PAR
+
+    IDENTIFIER  shift, and go to state 25
+    CLOSE_PAR   shift, and go to state 26
+
+
+state 21
+
+    9 Function_declar: Type IDENTIFIER Function_param PV .
+
+    $default  reduce using rule 9 (Function_declar)
+
+
+state 22
+
+   10 Function_declar: Type IDENTIFIER Function_param OPEN_BRA . Function_body CLOSE_BRA
+
+    $default  reduce using rule 15 (Function_body)
+
+    Function_body  go to state 27
+
+
+state 23
+
+   14 Function_param: Type IDENTIFIER .
+
+    $default  reduce using rule 14 (Function_param)
+
+
+state 24
+
+    4 Variable_declar: Type IDENTIFIER ASSIGNMENT Constructeur PV .
+
+    $default  reduce using rule 4 (Variable_declar)
+
+
+state 25
+
+   12 Function_param: OPEN_PAR Type IDENTIFIER . CLOSE_PAR
+   13               | OPEN_PAR Type IDENTIFIER . VIRG Function_param CLOSE_PAR
+
+    VIRG       shift, and go to state 28
+    CLOSE_PAR  shift, and go to state 29
+
+
+state 26
+
+   11 Function_param: OPEN_PAR Type CLOSE_PAR .
+
+    $default  reduce using rule 11 (Function_param)
+
+
+state 27
+
+   10 Function_declar: Type IDENTIFIER Function_param OPEN_BRA Function_body . CLOSE_BRA
+
+    CLOSE_BRA  shift, and go to state 30
+
+
+state 28
+
+   13 Function_param: OPEN_PAR Type IDENTIFIER VIRG . Function_param CLOSE_PAR
+
+    TYPE      shift, and go to state 1
+    OPEN_PAR  shift, and go to state 13
+
+    Function_param  go to state 31
+    Type            go to state 15
+
+
+state 29
+
+   12 Function_param: OPEN_PAR Type IDENTIFIER CLOSE_PAR .
+
+    $default  reduce using rule 12 (Function_param)
+
+
+state 30
+
+   10 Function_declar: Type IDENTIFIER Function_param OPEN_BRA Function_body CLOSE_BRA .
+
+    $default  reduce using rule 10 (Function_declar)
+
+
+state 31
+
+   13 Function_param: OPEN_PAR Type IDENTIFIER VIRG Function_param . CLOSE_PAR
+
+    CLOSE_PAR  shift, and go to state 32
+
+
+state 32
+
+   13 Function_param: OPEN_PAR Type IDENTIFIER VIRG Function_param CLOSE_PAR .
+
+    $default  reduce using rule 13 (Function_param)

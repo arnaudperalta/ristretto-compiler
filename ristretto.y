@@ -6,7 +6,7 @@
 #include <ctype.h>
 #include "class_compiler.h"
 
-#define CONSTANT_SIZE 256
+#define TYPE_LENGTH 256
 #define FUNCTION_PARAM_LENGTH 256
 #define PARAM_LENGTH 30
 #define FILENAME_LENGTH 100
@@ -23,7 +23,7 @@ FILE *yyout;
 
 /* Fonctions */
 
-int add_variable_to_pool(char *type, bool is_array, char *name, char *data_type, void *data);
+int add_variable_to_pool(char *type, char *name, char *data_type, void *data);
 int add_funconstant_to_pool(char *type, char *name, char *params);
 
 /* Données */
@@ -67,10 +67,10 @@ S:
 Variable_declar: 
     Type IDENTIFIER ASSIGNMENT Constructeur PV { 
         line_analyse = $4.line;
-        add_variable_to_pool($1, false, $2, $4.type, $4.data);
+        add_variable_to_pool($1, $2, $4.type, $4.data);
     }
     | Type IDENTIFIER PV {
-        add_variable_to_pool($1, false, $2, NULL, NULL);
+        add_variable_to_pool($1, $2, NULL, NULL);
     }
 
 Constructeur:
@@ -124,8 +124,8 @@ Type:
     }
     | TYPE ARRAY {
         char str[PARAM_LENGTH] = {0};
-        strcat(str, $1);
         strcat(str, $2);
+        strcat(str, $1);
         $$ = str;
     }
 %%
@@ -146,16 +146,15 @@ int main(int argc, char **argv) {
         perror("erreur fopen");
         return EXIT_FAILURE;
     }
-    char filename[FILENAME_LENGTH];
     char *token = strtok(argv[1], ".");
     token[0] = toupper(token[0]);
-    sprintf(filename, "%s.class", token);
-    yyout = fopen(filename, "w");
-    if (yyout == NULL) {
+    //sprintf(filename, "%s.class", token);
+    //yyout = fopen(filename, "w");
+    /*if (yyout == NULL) {
         perror("erreur fopen");
         return EXIT_FAILURE;
-    }
-    pool = constant_pool_init(token);
+    }*/
+    constant_pool *pool = constant_pool_init(token);
     if (pool == NULL) {
         perror("constant pool init erreur");
         return EXIT_FAILURE;
@@ -168,33 +167,13 @@ int main(int argc, char **argv) {
 }
 
 // On renvoie une erreur bison si le type ne correspond pas a la donnée
-int add_variable_to_pool(char *type, bool is_array, char *name
-        , char *data_type, void *data) {
+int add_variable_to_pool(char *type, char *name, char *data_type, void *data) {
     if (data_type != NULL && strncmp(type, data_type, 3) != 0) {
         printf("%s %s\n", type, data_type);
         yyerror("Incompatible value for the previous type.");
         return -1;
     }
-    char constant[CONSTANT_SIZE] = { 0 };
-
-    if (strncmp(type, "boolean", 3) == 0) {
-        printf("%s\n", type);
-        bool *b = (bool *) data;
-        printf("value : %d\n", *b);
-
-    } else if (strncmp(type, "int", 3) == 0) {
-        printf("int\n");
-        int* i = (int *) data;
-        printf("value:%d\n", *i);
-    } else if (strncmp(type, "float", 3) == 0) {
-        printf("float\n");
-        float* f = (float *) data;
-        printf("value:%f\n", *f);
-    } else {
-        printf("void\n");
-    }
-    if (is_array) printf("tableau\n");
-    printf("name : %s\n", name);
+    constant_pool_field_entry(pool, name, type);
     free(data);
     return 0;
 }
@@ -204,21 +183,6 @@ int add_funconstant_to_pool(char *type, char *name, char *params) {
         printf("function void\n");
     else
         printf("func name : %s params : %s\n", name, params);
-
+    constant_pool_method_entry(pool, name, type);
     return 0;
-}
-
-int print_class_file() {
-    fwrite(&magic, sizeof (unsigned int), 1, yyout);
-    fwrite(&mineur, sizeof (unsigned short), 1, yyout);
-    fwrite(&majeur, sizeof (unsigned short), 1, yyout);
-    fwrite(&mineur, sizeof (unsigned short), 1, yyout);
-    fwrite(&constant_pool_count, sizeof (unsigned short), 1, yyout);
-    fwrite(&access_flags, sizeof (unsigned short), 1, yyout);
-    fwrite(&interface_count, sizeof (unsigned short), 1, yyout);
-    return 0;
-}
-
-void out(void *ptr, size_t length) {
-    fwrite(ptr, length, 1, yyout);
 }

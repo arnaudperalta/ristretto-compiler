@@ -21,7 +21,7 @@ int llerror(char *s) {
 %option noyywrap
 %option yylineno
 
-type        int|boolean|float|void|int
+type        int|boolean|float|void
 array       \[\]|\[\]\[\]
 identifier  [_a-zA-Z][_a-zA-Z0-9]*
 operator    [=][=]|[&][&]|[|][|]|[+]|[-]|[/]|[*]|[%]
@@ -44,9 +44,28 @@ floatcons   [+-]?([0-9]*[.])?[0-9]+
 [,]         { return(VIRG); }
 [ \t\n]       ;
 
-{type}       { yylval.text = strdup(yytext); return TYPE; }
-{array}      { 
-    yylval.text = yytext;
+{type}       {
+    if (strcmp(yytext, "int") == 0) {
+        yylval.text = strdup("I");
+    } else if (strcmp(yytext, "boolean") == 0) {
+        yylval.text = strdup("Z");
+    } else if (strcmp(yytext, "float") == 0) {
+        yylval.text = strdup("F");
+    } else {
+        yylval.text = strdup("V");
+    }
+    return TYPE;
+}
+{array} { 
+    if (strcmp(yytext, "[]") == 0) {
+        yylval.text = strdup("[");
+    } else {
+        char dble_sqbrckts[3];
+        dble_sqbrckts[0] = '[';
+        dble_sqbrckts[1] = '[';
+        dble_sqbrckts[2] = '\0';
+        yylval.text = strdup(dble_sqbrckts);
+    }
     return ARRAY;
 }
 {operator}   { return OPERATOR; }
@@ -56,7 +75,7 @@ floatcons   [+-]?([0-9]*[.])?[0-9]+
     int *ptr = malloc(sizeof (int));
     *ptr = i;
     yylval.constr.data = ptr;
-    yylval.constr.type = "int";
+    yylval.constr.type = "I";
     yylval.constr.line = yylineno;
     return INTCONS; 
 }
@@ -65,7 +84,7 @@ floatcons   [+-]?([0-9]*[.])?[0-9]+
     int *ptr = malloc(sizeof (int));
     *ptr = i;
     yylval.constr.data = ptr;
-    yylval.constr.type = "boolean";
+    yylval.constr.type = "Z";
     return BOOLCONS; 
 }
 {floatcons}  {
@@ -73,7 +92,7 @@ floatcons   [+-]?([0-9]*[.])?[0-9]+
     int *ptr = malloc(sizeof (float));
     *ptr = f;
     yylval.constr.data = ptr;
-    yylval.constr.type = "float";
+    yylval.constr.type = "F";
     return FLOATCONS; 
 }
 {identifier} { 

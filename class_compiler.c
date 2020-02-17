@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "class_compiler.h"
 
 #define MAX_CONSTANT 512
@@ -17,6 +19,64 @@ struct constant_pool {
     u2 entry_count;
     void **pool;
 };
+
+struct Utf8_info {
+    u1 tag;
+    u2 length;
+    u1 *bytes;
+} const Utf8_info_default = { CONSTANT_Utf8, 0 };
+typedef struct Utf8_info Utf8_info;
+
+struct Class_info {
+    u1 tag;
+    u2 name_index;
+} const Class_info_default = { CONSTANT_Class, 0 };
+typedef struct Class_info Class_info;
+
+struct NameAndType_info {
+    u1 tag;
+    u2 name_index;
+    u2 descriptor_index;
+} const NameAndType_info_default = { CONSTANT_NameAndType, 0, 0 };
+typedef struct NameAndType_info NameAndType_info;
+
+struct Fieldref_info {
+    u1 tag;
+    u2 class_index;
+    u2 name_and_type_index;
+} const Fieldref_info_default = { CONSTANT_Fieldref, 0, 0 };
+typedef struct Fieldref_info Fieldref_info;
+
+struct Methodref_info {
+    u1 tag;
+    u2 class_index;
+    u2 name_and_type_index;
+} const Methodref_info_default = { CONSTANT_Methodref, 0, 0 };
+typedef struct Methodref_info Methodref_info;
+
+struct String_info {
+    u1 tag;
+    u2 string_index;
+} const String_info_default = { CONSTANT_String, 0 };
+typedef struct String_info String_info;
+
+struct Integer_info {
+    u1 tag;
+    u4 bytes;
+} const Integer_info_default = { CONSTANT_Integer, 0 };
+typedef struct Integer_info Integer_info;
+
+struct Float_info {
+    u1 tag;
+    u4 bytes;
+} const Float_info_default = { CONSTANT_Float, 0 };
+typedef struct Float_info Float_info;
+
+NameAndType_info *new_nameandtype(u2 name, u2 desc);
+Class_info *new_class(u2 l);
+Utf8_info *new_utf8(char *string);
+Methodref_info *new_methodref(u2 index, u2 name);
+Fieldref_info *new_fieldref(u2 index, u2 name);
 
 constant_pool *constant_pool_init(char *class_name) {
     constant_pool *ptr = malloc(sizeof (constant_pool));
@@ -84,47 +144,49 @@ int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
     // x + 1. Methodref_info : (7, 2);
     if (constant_pool_entry(ptr, new_methodref(CLASS_LINE, line_count + 2)) != 0) {
         perror("entry method erreur");
-        return NULL;
+        return -1;
     }
     // x + 2. NameAndType_info : (x + 3, x + 4);
     if (constant_pool_entry(ptr, new_nameandtype(line_count + 3, line_count + 4)) != 0) {
         perror("entry nameandtype erreur");
-        return NULL;
+        return -1;
     }
     // x + 3. Utf8_info : ”fact” ;
     if (constant_pool_entry(ptr, new_utf8(name)) != 0) {
         perror("entry utf8 erreur");
-        return NULL;
+        return -1;
     }
     // x + 4. Utf8_info : ”(I)I” ;
     if (constant_pool_entry(ptr, new_utf8(type)) != 0) {
         perror("entry utf8 erreur");
-        return NULL;
+        return -1;
     }
     return 0;
 }
 
 int constant_pool_field_entry(constant_pool *ptr, char *name, char *type) {
     u2 line_count = constant_pool_count(ptr);
+    printf("debug2\n");
     // x + 1. Methodref_info : (7, 2);
     if (constant_pool_entry(ptr, new_fieldref(CLASS_LINE, line_count + 2)) != 0) {
         perror("entry field erreur");
-        return NULL;
+        return -1;
     }
+    printf("debug1\n");
     // x + 2. NameAndType_info : (x + 3, x + 4);
     if (constant_pool_entry(ptr, new_nameandtype(line_count + 3, line_count + 4)) != 0) {
         perror("entry nameandtype erreur");
-        return NULL;
+        return -1;
     }
-    // x + 3. Utf8_info : ”fact” ;
+    // x + 3. Utf8_info : "a" ;
     if (constant_pool_entry(ptr, new_utf8(name)) != 0) {
         perror("entry utf8 erreur");
-        return NULL;
+        return -1;
     }
-    // x + 4. Utf8_info : ”(I)I” ;
+    // x + 4. Utf8_info : "I" ;
     if (constant_pool_entry(ptr, new_utf8(type)) != 0) {
         perror("entry utf8 erreur");
-        return NULL;
+        return -1;
     }
     return 0;
 }

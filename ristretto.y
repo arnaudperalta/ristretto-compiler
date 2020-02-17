@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
         perror("erreur fopen");
         return EXIT_FAILURE;
     }*/
-    constant_pool *pool = constant_pool_init(token);
+    pool = constant_pool_init(token);
     if (pool == NULL) {
         perror("constant pool init erreur");
         return EXIT_FAILURE;

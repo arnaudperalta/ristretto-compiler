@@ -1,0 +1,7 @@
+*.o
+*.yy.*
+*.vcg
+*.tab.*
+*.output
+ristretto
+ressources

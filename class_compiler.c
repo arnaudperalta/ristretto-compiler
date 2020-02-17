@@ -166,13 +166,11 @@ int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
 
 int constant_pool_field_entry(constant_pool *ptr, char *name, char *type) {
     u2 line_count = constant_pool_count(ptr);
-    printf("debug2\n");
     // x + 1. Methodref_info : (7, 2);
     if (constant_pool_entry(ptr, new_fieldref(CLASS_LINE, line_count + 2)) != 0) {
         perror("entry field erreur");
         return -1;
     }
-    printf("debug1\n");
     // x + 2. NameAndType_info : (x + 3, x + 4);
     if (constant_pool_entry(ptr, new_nameandtype(line_count + 3, line_count + 4)) != 0) {
         perror("entry nameandtype erreur");

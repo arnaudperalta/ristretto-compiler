@@ -5,3 +5,4 @@
 *.output
 ristretto
 ressources/
+.DS_Store

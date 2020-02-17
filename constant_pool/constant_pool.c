@@ -1,24 +1,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "constant_pool.h"
+#include "field_pool.h"
 #include "class_compiler.h"
 
-#define MAX_CONSTANT 512
-#define CLASS_LINE   7
+#define POOL_SIZE 512
+#define CONSTANT_Class 7
+#define CONSTANT_Fieldref 9
+#define CONSTANT_Methodref 10
+#define CONSTANT_String	8
+#define CONSTANT_Integer 3
+#define CONSTANT_Float 4
+#define CONSTANT_NameAndType 12
+#define CONSTANT_Utf8 1
 
-u4 magic = 0xCAFEBABE;
-u2 mineur = 0x0000;
-u2 majeur = 0x0034;
-u2 access_flags = 0x0009; // 0x0001 |= 0x0008
-u2 interface_count = 0;
-u2 field_count = 0;
-u2 methods_count = 0;
-u2 attr_count = 0;
-
-struct constant_pool {
-    u2 entry_count;
-    void **pool;
-};
+u2 index_this = 7;
+u2 index_super = 2;
 
 struct Utf8_info {
     u1 tag;
@@ -72,23 +70,28 @@ struct Float_info {
 } const Float_info_default = { CONSTANT_Float, 0 };
 typedef struct Float_info Float_info;
 
+int constant_pool_entry(constant_pool *ptr, void *entry);
 NameAndType_info *new_nameandtype(u2 name, u2 desc);
 Class_info *new_class(u2 l);
 Utf8_info *new_utf8(char *string);
 Methodref_info *new_methodref(u2 index, u2 name);
 Fieldref_info *new_fieldref(u2 index, u2 name);
 
-constant_pool *constant_pool_init(char *class_name) {
+constant_pool *constant_pool_init(char *name) {
     constant_pool *ptr = malloc(sizeof (constant_pool));
-    if (ptr == NULL)
+    if (ptr == NULL) {
+        perror("Erreur malloc");
         return NULL;
-    ptr->entry_count = 1; // on démarre a 1 comme dans l'énoncé
-    ptr->pool = malloc((sizeof (void *)) * MAX_CONSTANT);
+    }
+    ptr->class_name = malloc(strlen(name) + strlen(".class") + 1);
+    sprintf(ptr->class_name, "%s.class", name);
+    ptr->entry_count = 0;
+    ptr->pool = malloc((sizeof (void *)) * POOL_SIZE);
     if (ptr->pool == NULL)
         return NULL;
 
     // 1. Methodref_info : (2, 3);
-    if (constant_pool_entry(ptr, new_methodref(2, 3)) != 0) {
+    if (constant_pool_entry(ptr, new_methodref(index_super, 3)) != 0) {
         perror("entry cons erreur");
         return NULL;
     }
@@ -123,7 +126,7 @@ constant_pool *constant_pool_init(char *class_name) {
         return NULL;
     }
     //8. Utf8_info : "class_name";
-    if (constant_pool_entry(ptr, new_utf8(class_name)) != 0) {
+    if (constant_pool_entry(ptr, new_utf8(name)) != 0) {
         perror("entry class erreur");
         return NULL;
     }
@@ -132,8 +135,10 @@ constant_pool *constant_pool_init(char *class_name) {
 }
 
 int constant_pool_entry(constant_pool *ptr, void *entry) {
-    if (ptr->entry_count == MAX_CONSTANT) 
+    if (ptr->entry_count == POOL_SIZE) {
+        perror("Max constant pool entries.");
         return -1;
+    }
     ptr->pool[ptr->entry_count] = entry;
     ptr->entry_count++;
     return 0;
@@ -142,7 +147,7 @@ int constant_pool_entry(constant_pool *ptr, void *entry) {
 int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
-    if (constant_pool_entry(ptr, new_methodref(CLASS_LINE, line_count + 2)) != 0) {
+    if (constant_pool_entry(ptr, new_methodref(index_this, line_count + 2)) != 0) {
         perror("entry method erreur");
         return -1;
     }
@@ -167,7 +172,7 @@ int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
 int constant_pool_field_entry(constant_pool *ptr, char *name, char *type) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
-    if (constant_pool_entry(ptr, new_fieldref(CLASS_LINE, line_count + 2)) != 0) {
+    if (constant_pool_entry(ptr, new_fieldref(index_this, line_count + 2)) != 0) {
         perror("entry field erreur");
         return -1;
     }
@@ -186,13 +191,20 @@ int constant_pool_field_entry(constant_pool *ptr, char *name, char *type) {
         perror("entry utf8 erreur");
         return -1;
     }
+
     return 0;
 }
 
 u2 constant_pool_count(constant_pool *ptr) {
-    if (ptr == NULL)
-        return 0;
     return ptr->entry_count;
+}
+
+u2 constant_pool_this(void) {
+    return index_this;
+}
+
+u2 constant_pool_super(void) {
+    return index_super;
 }
 
 NameAndType_info *new_nameandtype(u2 name, u2 desc) {
@@ -248,8 +260,15 @@ Fieldref_info *new_fieldref(u2 index, u2 name) {
     return ptr;
 }
 
-void constant_pool_debug(constant_pool *ptr) {
-    for (int i = 0; i < ptr->entry_count; ++i) {
-        printf("%p\n", ptr->pool[i]);
+size_t get_sizeof_entry(void *entry) {
+    u1 tag = *((u1 *) entry);
+    switch(tag) {
+        case CONSTANT_Class: return sizeof(Class_info);
+        case CONSTANT_Fieldref: return sizeof(Fieldref_info);
+        case CONSTANT_Float: return sizeof(Float_info);
+        case CONSTANT_Integer: return sizeof(Integer_info);
+        case CONSTANT_NameAndType: return sizeof(NameAndType_info);
+        case CONSTANT_Utf8: return sizeof(Utf8_info);
+        default: return 0;
     }
 }

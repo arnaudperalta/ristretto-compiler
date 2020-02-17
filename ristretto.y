@@ -140,29 +140,19 @@ int main(int argc, char **argv) {
         perror("Please give a filename.");
         exit(EXIT_FAILURE);
     }
-    // Si un filename est donné, on créé un fichier .class
     yyin = fopen(argv[1], "r");
     if (yyin == NULL) {
-        perror("erreur fopen");
+        printf("Le fichier entré n'existe pas.\n");
         return EXIT_FAILURE;
     }
     char *token = strtok(argv[1], ".");
     token[0] = toupper(token[0]);
-    //sprintf(filename, "%s.class", token);
-    //yyout = fopen(filename, "w");
-    /*if (yyout == NULL) {
-        perror("erreur fopen");
-        return EXIT_FAILURE;
-    }*/
     pool = constant_pool_init(token);
     if (pool == NULL) {
         perror("constant pool init erreur");
         return EXIT_FAILURE;
     }
     yyparse();
-
-    fclose(yyout);
-
     return EXIT_SUCCESS;
 }
 

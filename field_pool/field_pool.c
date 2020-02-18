@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "class_compiler.h"
 #include "field_pool.h"
 
@@ -39,12 +40,12 @@ Field_info *new_field(u2 name_index, u2 type_index) {
     return ptr;
 }
 
-int field_pool_entry(field_pool *ptr, void *entry) {
+int field_pool_entry(field_pool *ptr, u2 name_index, u2 type_index) {
     if (ptr->field_count == POOL_SIZE) {
         perror("Max field pool entries.");
         return -1;
     }
-    ptr->pool[ptr->field_count] = entry;
+    ptr->pool[ptr->field_count] = new_field(name_index, type_index);
     ptr->field_count++;
     return 0;
 }

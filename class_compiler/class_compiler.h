@@ -9,7 +9,13 @@ typedef unsigned int u4;
 
 #include "constant_pool.h"
 
+typedef struct class_compiler class_compiler;
+
 /* ---------- Fonctions --------- */
+
+extern class_compiler *class_compiler_init(char *name);
+
+extern int class_compiler_add_field(class_compiler *cc, char *name, char *type);
 
 // Renvoie le nombre d'entrée de la structure,
 // ce qui équivaut au numero de la dernière ligne écrite

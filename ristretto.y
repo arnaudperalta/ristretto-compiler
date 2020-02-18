@@ -23,12 +23,12 @@ FILE *yyout;
 
 /* Fonctions */
 
-int add_variable_to_pool(char *type, char *name, char *data_type, void *data);
+int add_field_to_compiler(char *type, char *name, char *data_type, void *data);
 int add_funconstant_to_pool(char *type, char *name, char *params);
 
 /* Données */
 
-constant_pool *pool;
+class_compiler *cc;
 int line_analyse = 0; // Ligne en cours d'analyse, permet de traquer la ligne de l'erreur
 
 %}
@@ -67,10 +67,10 @@ S:
 Variable_declar: 
     Type IDENTIFIER ASSIGNMENT Constructeur PV { 
         line_analyse = $4.line;
-        add_variable_to_pool($1, $2, $4.type, $4.data);
+        add_field_to_compiler($1, $2, $4.type, $4.data);
     }
     | Type IDENTIFIER PV {
-        add_variable_to_pool($1, $2, NULL, NULL);
+        add_field_to_compiler($1, $2, NULL, NULL);
     }
 
 Constructeur:
@@ -80,10 +80,10 @@ Constructeur:
 
 Function_declar:
     Type IDENTIFIER Function_param PV {
-        add_funconstant_to_pool($1, $2, $3);
+        //add_funconstant_to_pool($1, $2, $3);
     }
 |   Type IDENTIFIER Function_param OPEN_BRA Function_body CLOSE_BRA {
-        add_funconstant_to_pool($1, $2, $3);
+        //add_funconstant_to_pool($1, $2, $3);
     }
 
 Function_param:
@@ -147,9 +147,10 @@ int main(int argc, char **argv) {
     }
     char *token = strtok(argv[1], ".");
     token[0] = toupper(token[0]);
-    pool = constant_pool_init(token);
-    if (pool == NULL) {
-        perror("constant pool init erreur");
+
+    cc = class_compiler_init(token);
+    if (cc == NULL) {
+        perror("class compiler init erreur");
         return EXIT_FAILURE;
     }
     yyparse();
@@ -157,22 +158,21 @@ int main(int argc, char **argv) {
 }
 
 // On renvoie une erreur bison si le type ne correspond pas a la donnée
-int add_variable_to_pool(char *type, char *name, char *data_type, void *data) {
+int add_field_to_compiler(char *type, char *name, char *data_type, void *data) {
     if (data_type != NULL && strncmp(type, data_type, 3) != 0) {
         printf("%s %s\n", type, data_type);
         yyerror("Incompatible value for the previous type.");
         return -1;
     }
-    constant_pool_field_entry(pool, name, type);
-    free(data);
+    class_compiler_add_field(cc, name, type);
     return 0;
 }
 
-int add_funconstant_to_pool(char *type, char *name, char *params) {
+/*int add_function_to_compiler(char *type, char *name, char *params) {
     if (params == NULL)
         printf("function void\n");
     else
         printf("func name : %s params : %s\n", name, params);
     constant_pool_method_entry(pool, name, type);
     return 0;
-}
+}*/

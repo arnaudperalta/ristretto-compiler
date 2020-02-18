@@ -14,11 +14,31 @@ u2 interface_count = 0x0000;
 struct class_compiler {
     constant_pool *cp;
     field_pool *fp;
-} class_compiler;
+};
 
-int class_compiler_init(char *name) {
-    constant_pool_init(name);
-    //TODO : finir la fonction avec création de la field pool
+class_compiler *class_compiler_init(char *name) {
+    class_compiler *ptr = malloc(sizeof(class_compiler));
+    if (ptr == NULL) {
+        perror("erreur malloc");
+        return NULL;
+    }
+    ptr->cp = constant_pool_init(name);
+    ptr->fp = field_pool_init();
+    return ptr;
+}
+
+int class_compiler_add_field(class_compiler *cc, char *name, char *type) {
+    u2 name_index;
+    u2 type_index;
+    if (constant_pool_field_entry(cc->cp, name, type
+        , &name_index, &type_index) != 0) {
+        perror("Erreur field_entry constant pool");
+        return -1;
+    }
+    if (field_pool_entry(cc->fp, name_index, type_index) != 0) {
+        perror("Erreur field_entry field pool");
+        return -1;
+    }
     return 0;
 }
 

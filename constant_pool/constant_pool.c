@@ -141,53 +141,56 @@ int constant_pool_entry(constant_pool *ptr, void *entry) {
     }
     ptr->pool[ptr->entry_count] = entry;
     ptr->entry_count++;
-    return 0;
+    return ptr->entry_count; // Renvoie l'index dans la constant pool
 }
 
 int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
-    if (constant_pool_entry(ptr, new_methodref(index_this, line_count + 2)) != 0) {
+    if (constant_pool_entry(ptr, new_methodref(index_this, line_count + 2)) < 0) {
         perror("entry method erreur");
         return -1;
     }
     // x + 2. NameAndType_info : (x + 3, x + 4);
-    if (constant_pool_entry(ptr, new_nameandtype(line_count + 3, line_count + 4)) != 0) {
+    if (constant_pool_entry(ptr, new_nameandtype(line_count + 3, line_count + 4)) < 0) {
         perror("entry nameandtype erreur");
         return -1;
     }
     // x + 3. Utf8_info : ”fact” ;
-    if (constant_pool_entry(ptr, new_utf8(name)) != 0) {
+    if (constant_pool_entry(ptr, new_utf8(name)) < 0) {
         perror("entry utf8 erreur");
         return -1;
     }
     // x + 4. Utf8_info : ”(I)I” ;
-    if (constant_pool_entry(ptr, new_utf8(type)) != 0) {
+    if (constant_pool_entry(ptr, new_utf8(type)) < 0) {
         perror("entry utf8 erreur");
         return -1;
     }
     return 0;
 }
 
-int constant_pool_field_entry(constant_pool *ptr, char *name, char *type) {
+int constant_pool_field_entry(constant_pool *ptr, char *name, char *type
+        , u2 *name_index, u2 *type_index) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
-    if (constant_pool_entry(ptr, new_fieldref(index_this, line_count + 2)) != 0) {
+    if (constant_pool_entry(ptr, new_fieldref(index_this, line_count + 2)) < 0) {
         perror("entry field erreur");
         return -1;
     }
     // x + 2. NameAndType_info : (x + 3, x + 4);
-    if (constant_pool_entry(ptr, new_nameandtype(line_count + 3, line_count + 4)) != 0) {
+    if (constant_pool_entry(ptr, new_nameandtype(line_count + 3, line_count + 4)) < 0) {
         perror("entry nameandtype erreur");
         return -1;
     }
     // x + 3. Utf8_info : "a" ;
-    if (constant_pool_entry(ptr, new_utf8(name)) != 0) {
+    *name_index = constant_pool_entry(ptr, new_utf8(name));
+    if (*name_index < 0) {
         perror("entry utf8 erreur");
         return -1;
     }
     // x + 4. Utf8_info : "I" ;
-    if (constant_pool_entry(ptr, new_utf8(type)) != 0) {
+    *type_index = constant_pool_entry(ptr, new_utf8(type));
+    if (*type_index < 0) {
         perror("entry utf8 erreur");
         return -1;
     }

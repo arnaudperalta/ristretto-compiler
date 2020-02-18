@@ -36,7 +36,8 @@ extern constant_pool *constant_pool_init(char *name);
 *   x + 4. Utf8_info : "I" ;
 */
 extern int constant_pool_method_entry(constant_pool *ptr, char *name, char *type);
-extern int constant_pool_field_entry(constant_pool *ptr, char *name, char *type);
+extern int constant_pool_field_entry(constant_pool *ptr, char *name, char *type
+        , u2 *name_index, u2 *type_index);
 
 extern u2 constant_pool_this(void);
 extern u2 constant_pool_super(void);

@@ -2,7 +2,6 @@
 #define CONSTPOOL__H
 
 typedef struct constant_pool {
-    char *class_name;
     unsigned short entry_count;
     void **pool;
 } constant_pool;
@@ -38,6 +37,10 @@ extern constant_pool *constant_pool_init(char *name);
 extern int constant_pool_method_entry(constant_pool *ptr, char *name, char *type);
 extern int constant_pool_field_entry(constant_pool *ptr, char *name, char *type
         , u2 *name_index, u2 *type_index);
+
+// Renvoie le nombre d'entrée de la structure,
+// ce qui équivaut au numero de la dernière ligne écrite
+extern u2 constant_pool_count(constant_pool *ptr);
 
 extern u2 constant_pool_this(void);
 extern u2 constant_pool_super(void);

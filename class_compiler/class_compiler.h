@@ -17,13 +17,9 @@ extern class_compiler *class_compiler_init(char *name);
 
 extern int class_compiler_add_field(class_compiler *cc, char *name, char *type);
 
-// Renvoie le nombre d'entrée de la structure,
-// ce qui équivaut au numero de la dernière ligne écrite
-extern u2 constant_pool_count(constant_pool *ptr);
-
 // Print dans un fichier <nom>.class le contenu correspondant à 
 // la structure donnée en paramètre (données et son nom).
-extern int class_compiler_print(constant_pool *ptr);
+extern int class_compiler_print(class_compiler *ptr);
 
 
 #endif

@@ -13,11 +13,6 @@ struct Field_info {
 } const Field_info_default = { 0x0009, 0, 0, 0 };
 typedef struct Field_info Field_info;
 
-struct field_pool {
-    u2 field_count;
-    Field_info **pool;
-};
-
 field_pool *field_pool_init(void) {
     field_pool *ptr = malloc(sizeof(field_pool));
     if (ptr == NULL) {
@@ -48,4 +43,8 @@ int field_pool_entry(field_pool *ptr, u2 name_index, u2 type_index) {
     ptr->pool[ptr->field_count] = new_field(name_index, type_index);
     ptr->field_count++;
     return 0;
+}
+
+size_t field_pool_sizeof(void) {
+    return sizeof(Field_info);
 }

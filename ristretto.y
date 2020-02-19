@@ -154,6 +154,8 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     yyparse();
+    class_compiler_print(cc);
+
     return EXIT_SUCCESS;
 }
 

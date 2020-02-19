@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "constant_pool.h"
-#include "field_pool.h"
 #include "class_compiler.h"
 
 #define POOL_SIZE 512
@@ -83,50 +82,49 @@ constant_pool *constant_pool_init(char *name) {
         perror("Erreur malloc");
         return NULL;
     }
-    ptr->class_name = malloc(strlen(name) + strlen(".class") + 1);
-    sprintf(ptr->class_name, "%s.class", name);
     ptr->entry_count = 0;
     ptr->pool = malloc((sizeof (void *)) * POOL_SIZE);
     if (ptr->pool == NULL)
         return NULL;
 
     // 1. Methodref_info : (2, 3);
-    if (constant_pool_entry(ptr, new_methodref(index_super, 3)) != 0) {
+    if (constant_pool_entry(ptr, new_methodref(index_super, 3)) < 0) {
+        printf("%d\n", ptr->entry_count);
         perror("entry cons erreur");
         return NULL;
     }
     // 2. Class_info : 4;
-    if (constant_pool_entry(ptr, new_class(4)) != 0) {
+    if (constant_pool_entry(ptr, new_class(4)) < 0) {
         perror("entry ci erreur");
         return NULL;
     }
     // 3. NameAndType_info : (5, 6);
-    if (constant_pool_entry(ptr, new_nameandtype(5, 6)) != 0) {
+    if (constant_pool_entry(ptr, new_nameandtype(5, 6)) < 0) {
         perror("entry nat erreur");
         return NULL;
     }
     // 4. Utf8_info : "java/lang/Object";
-    if (constant_pool_entry(ptr, new_utf8("java/lang/Object")) != 0) {
+    if (constant_pool_entry(ptr, new_utf8("java/lang/Object")) < 0) {
         perror("entry class erreur");
         return NULL;
     }
     // 5. Utf8_info : "<init>";
-    if (constant_pool_entry(ptr, new_utf8("<init>")) != 0) {
+    if (constant_pool_entry(ptr, new_utf8("<init>")) < 0) {
         perror("entry class erreur");
         return NULL;
     }
     // 6. Utf8_info : "()V";
-    if (constant_pool_entry(ptr, new_utf8("()V")) != 0) {
+    if (constant_pool_entry(ptr, new_utf8("()V")) < 0) {
         perror("entry class erreur");
         return NULL;
     }
     // 7. Class_info : 8;
-    if (constant_pool_entry(ptr, new_class(8)) != 0) {
+    if (constant_pool_entry(ptr, new_class(8)) < 0) {
         perror("entry ci erreur");
         return NULL;
     }
     //8. Utf8_info : "class_name";
-    if (constant_pool_entry(ptr, new_utf8(name)) != 0) {
+    if (constant_pool_entry(ptr, new_utf8(name)) < 0) {
         perror("entry class erreur");
         return NULL;
     }

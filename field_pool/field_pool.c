@@ -13,6 +13,11 @@ struct Field_info {
 } const Field_info_default = { 0x0009, 0, 0, 0 };
 typedef struct Field_info Field_info;
 
+struct field_pool {
+    u2 field_count;
+    Field_info **pool;
+};
+
 field_pool *field_pool_init(void) {
     field_pool *ptr = malloc(sizeof(field_pool));
     if (ptr == NULL) {
@@ -45,6 +50,22 @@ int field_pool_entry(field_pool *ptr, u2 name_index, u2 type_index) {
     return 0;
 }
 
-size_t field_pool_sizeof(void) {
-    return sizeof(Field_info);
+u2 field_pool_count(field_pool *ptr) {
+    return ptr->field_count;
+}
+
+void field_pool_fwrite(field_pool *ptr, size_t index, FILE *f) {
+    if (index >= field_pool_count(ptr)) {
+        perror("Invalid index");
+        return;
+    }
+    Field_info *field = ptr->pool[index];
+    u2 access_flags = htons(field->access_flags);
+    fwrite(&access_flags, sizeof(u2), 1, f);
+    u2 name_index = htons(field->name_index);
+    fwrite(&name_index, sizeof(u2), 1, f);
+    u2 descriptor_index = htons(field->descriptor_index);
+    fwrite(&descriptor_index, sizeof(u2), 1, f);
+    u2 attributes_count = htons(field->attributes_count);
+    fwrite(&attributes_count, sizeof(u2), 1, f);
 }

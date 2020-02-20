@@ -1,10 +1,7 @@
 #ifndef CONSTPOOL__H
 #define CONSTPOOL__H
 
-typedef struct constant_pool {
-    unsigned short entry_count;
-    void **pool;
-} constant_pool;
+typedef struct constant_pool constant_pool;
 
 #include "class_compiler.h"
 

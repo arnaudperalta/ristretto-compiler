@@ -17,6 +17,11 @@
 u2 index_this = 7;
 u2 index_super = 2;
 
+struct constant_pool {
+    unsigned short entry_count;
+    void **pool;
+};
+
 struct Utf8_info {
     u1 tag;
     u2 length;
@@ -89,7 +94,6 @@ constant_pool *constant_pool_init(char *name) {
 
     // 1. Methodref_info : (2, 3);
     if (constant_pool_entry(ptr, new_methodref(index_super, 3)) < 0) {
-        printf("%d\n", ptr->entry_count);
         perror("entry cons erreur");
         return NULL;
     }
@@ -270,6 +274,92 @@ size_t get_sizeof_entry(void *entry) {
         case CONSTANT_Integer: return sizeof(Integer_info);
         case CONSTANT_NameAndType: return sizeof(NameAndType_info);
         case CONSTANT_Utf8: return sizeof(Utf8_info);
+        case CONSTANT_Methodref: return sizeof(Methodref_info);
+        //string
         default: return 0;
+    }
+}
+
+void _fwrite_class(Class_info *ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    ptr->name_index = htons(ptr->name_index);
+    fwrite(&ptr->name_index, sizeof(u2), 1, f);
+}
+
+void _fwrite_fieldref(Fieldref_info*ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    ptr->class_index = htons(ptr->class_index);
+    fwrite(&ptr->class_index, sizeof(u2), 1, f);
+    ptr->name_and_type_index = htons(ptr->name_and_type_index);
+    fwrite(&ptr->name_and_type_index, sizeof(u2), 1, f);
+}
+
+void _fwrite_float(Float_info *ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    ptr->bytes = htonl(ptr->bytes);
+    fwrite(&ptr->bytes, sizeof(u4), 1, f);
+}
+
+void _fwrite_integer(Integer_info *ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    ptr->bytes = htonl(ptr->bytes);
+    fwrite(&ptr->bytes, sizeof(u4), 1, f);
+}
+
+void _fwrite_nameandtype(NameAndType_info *ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    ptr->name_index = htons(ptr->name_index);
+    fwrite(&ptr->name_index, sizeof(u2), 1, f);
+    ptr->descriptor_index = htons(ptr->descriptor_index);
+    fwrite(&ptr->descriptor_index, sizeof(u2), 1, f);
+}
+
+void _fwrite_utf8(Utf8_info *ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    u2 len = ptr->length;
+    ptr->length = htons(ptr->length);
+    fwrite(&ptr->length, sizeof(u2), 1, f);
+    fwrite(ptr->bytes, len, 1, f);
+}
+
+void _fwrite_methodref(Methodref_info *ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    ptr->class_index = htons(ptr->class_index);
+    fwrite(&ptr->class_index, sizeof(u2), 1, f);
+    ptr->name_and_type_index = htons(ptr->name_and_type_index);
+    fwrite(&ptr->name_and_type_index, sizeof(u2), 1, f);
+}
+
+void constant_pool_fwrite(constant_pool *ptr, int index, FILE *f) {
+    if (index >= ptr->entry_count) {
+        perror("Incorrect index");
+        return;
+    }
+    u1 tag = *((u1 *)ptr->pool[index]);
+    void *info = ptr->pool[index];
+    switch(tag) {
+        case CONSTANT_Class: 
+            _fwrite_class(info, f);
+            break;
+        case CONSTANT_Fieldref: 
+            _fwrite_fieldref(info, f);
+            break;
+        case CONSTANT_Float: 
+            _fwrite_float(info, f);
+            break;
+        case CONSTANT_Integer: 
+            _fwrite_integer(info, f);
+            break;
+        case CONSTANT_NameAndType: 
+            _fwrite_nameandtype(info, f);
+            break;
+        case CONSTANT_Utf8: 
+            _fwrite_utf8(info, f);
+            break;
+        case CONSTANT_Methodref: 
+            _fwrite_methodref(info, f);
+            break;
+        //string
+        default: return;
     }
 }

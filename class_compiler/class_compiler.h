@@ -21,5 +21,6 @@ extern int class_compiler_add_field(class_compiler *cc, char *name, char *type);
 // la structure donnée en paramètre (données et son nom).
 extern int class_compiler_print(class_compiler *ptr);
 
+extern void constant_pool_fwrite(constant_pool *ptr, int index, FILE *f);
 
 #endif

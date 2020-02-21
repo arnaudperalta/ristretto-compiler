@@ -5,6 +5,7 @@
 #include "class_compiler.h"
 #include "constant_pool.h"
 #include "field_pool.h"
+#include "method_pool.h"
 
 u4 magic = htonl(0xCAFEBABE);
 u2 mineur = htons(0x0000);
@@ -18,6 +19,7 @@ struct class_compiler {
     char *class_name;
     constant_pool *cp;
     field_pool *fp;
+    method_pool *mp;
 };
 
 class_compiler *class_compiler_init(char *name) {
@@ -34,14 +36,15 @@ class_compiler *class_compiler_init(char *name) {
     strcpy(ptr->class_name, name);
     ptr->cp = constant_pool_init(name);
     ptr->fp = field_pool_init();
+    ptr->mp = method_pool_init();
     return ptr;
 }
 
 int class_compiler_add_field(class_compiler *cc, char *name, char *type) {
     u2 name_index;
     u2 type_index;
-    if (constant_pool_field_entry(cc->cp, name, type
-        , &name_index, &type_index) != 0) {
+    int field_ref = constant_pool_field_entry(cc->cp, name, type, &name_index, &type_index);
+    if (field_ref < 0) {
         perror("Erreur field_entry constant pool");
         return -1;
     }
@@ -49,8 +52,13 @@ int class_compiler_add_field(class_compiler *cc, char *name, char *type) {
         perror("Erreur field_entry field pool");
         return -1;
     }
-    return 0;
+    return field_ref;
 }
+
+/*int class_compiler_add_method(class_compiler *cc, char *name, char *type) {
+    method_pool_entry();
+    return 0;
+}*/
 
 int class_compiler_print(class_compiler *ptr) {
     char filename[strlen(ptr->class_name) + strlen(".class") + 1];
@@ -90,9 +98,12 @@ int class_compiler_print(class_compiler *ptr) {
         field_pool_fwrite(ptr->fp, i, f);
     }
     // Nombre de méthodes
-    u2 method_count = 0;
+    u2 method_count = htons(method_pool_count(ptr->mp));
     write_in_class(f, &method_count, sizeof(u2));
     // Methodes pool
+    for (int i = 0; i < method_pool_count(ptr->mp); i++) {
+        method_pool_fwrite(ptr->mp, i, f);
+    }
     // Nombre d'attributs
     u2 attribut_count = 0;
     write_in_class(f, &attribut_count, sizeof(u2));
@@ -105,3 +116,10 @@ void write_in_class(FILE *f, void *arg, size_t size) {
     fwrite(arg, size, 1, f);
 }
 
+void add_instr_constructor(class_compiler *cc, u1 instr) {
+    method_pool_add_clinit(cc->mp, instr);
+}
+
+void close_method_pool(class_compiler *cc) {
+    method_pool_end(cc->mp);
+}

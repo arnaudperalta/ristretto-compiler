@@ -1,2 +1,1 @@
-int toto;
-boolean tata;
+int toto = 3;

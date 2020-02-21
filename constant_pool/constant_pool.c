@@ -16,6 +16,7 @@
 
 u2 index_this = 7;
 u2 index_super = 2;
+u2 index_code = 9;
 
 struct constant_pool {
     unsigned short entry_count;
@@ -132,6 +133,16 @@ constant_pool *constant_pool_init(char *name) {
         perror("entry class erreur");
         return NULL;
     }
+    //9. Utf8_info : "Code";
+    if (constant_pool_entry(ptr, new_utf8("Code")) < 0) {
+        perror("entry class erreur");
+        return NULL;
+    }
+    //10. Utf8_info : "<clinit>";
+    if (constant_pool_entry(ptr, new_utf8("<clinit>")) < 0) {
+        perror("entry class erreur");
+        return NULL;
+    }
 
     return ptr;
 }
@@ -175,7 +186,8 @@ int constant_pool_field_entry(constant_pool *ptr, char *name, char *type
         , u2 *name_index, u2 *type_index) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
-    if (constant_pool_entry(ptr, new_fieldref(index_this, line_count + 2)) < 0) {
+    int fieldref = constant_pool_entry(ptr, new_fieldref(index_this, line_count + 2));
+    if (fieldref < 0) {
         perror("entry field erreur");
         return -1;
     }
@@ -197,7 +209,7 @@ int constant_pool_field_entry(constant_pool *ptr, char *name, char *type
         return -1;
     }
 
-    return 0;
+    return fieldref;
 }
 
 u2 constant_pool_count(constant_pool *ptr) {
@@ -210,6 +222,10 @@ u2 constant_pool_this(void) {
 
 u2 constant_pool_super(void) {
     return index_super;
+}
+
+u2 constant_pool_code(void) {
+    return index_code;
 }
 
 NameAndType_info *new_nameandtype(u2 name, u2 desc) {

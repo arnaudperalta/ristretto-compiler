@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "class_compiler.h"
+#include "method_pool.h"
 
 #define TYPE_LENGTH 256
 #define FUNCTION_PARAM_LENGTH 256
@@ -25,10 +26,12 @@ FILE *yyout;
 
 int add_field_to_compiler(char *type, char *name, char *data_type, void *data);
 int add_funconstant_to_pool(char *type, char *name, char *params);
+void close_constructor(void);
 
 /* Données */
 
 class_compiler *cc;
+method *constr;
 int line_analyse = 0; // Ligne en cours d'analyse, permet de traquer la ligne de l'erreur
 
 %}
@@ -153,10 +156,38 @@ int main(int argc, char **argv) {
         perror("class compiler init erreur");
         return EXIT_FAILURE;
     }
+    //constructor_ini();
     yyparse();
+    // On termine l'écriture du constructeur
+    close_constructor();
+    // On écrit le fichier .class
     class_compiler_print(cc);
 
     return EXIT_SUCCESS;
+}
+
+
+
+// Pour l'instant, on autorise que des Type var = y en dehors des fonctions
+// Permet d'ajouter a la méthode constructeur l'assignement de la valeur
+// La data est limité a un byte
+void add_to_constructor(char *type, char *name, void *data, u2 field_ref) {
+    if (strcmp(type, "I") == 0) {
+        // bipush
+        add_instr_constructor(cc, 0x10);
+        // byte a push
+        u1 byte = *((u1 *) data);
+        add_instr_constructor(cc, byte);
+    } else if (strcmp(type, "Z") == 0) {
+    } else if (strcmp(type, "F") == 0) {
+    } else {
+        return;
+    }
+    // push du byte sur le field_ref associé
+    add_instr_constructor(cc, 0xb3);
+    // Le premier octet du numero de ligne de field_ref
+    add_instr_constructor(cc, field_ref >> 8);
+    add_instr_constructor(cc, field_ref);
 }
 
 // On renvoie une erreur bison si le type ne correspond pas a la donnée
@@ -166,11 +197,19 @@ int add_field_to_compiler(char *type, char *name, char *data_type, void *data) {
         yyerror("Incompatible value for the previous type.");
         return -1;
     }
-    class_compiler_add_field(cc, name, type);
+    int line = class_compiler_add_field(cc, name, type);
+    // Il ya un assignement de valeur, donc il se fera dans le constructeur
+    if (data_type != NULL) {
+        add_to_constructor(type, name, data, line);
+    }
     return 0;
 }
 
-/*int add_function_to_compiler(char *type, char *name, char *params) {
+void close_constructor(void) {
+    close_method_pool(cc);
+}
+
+/*int add_function_to_compiler(char *type, char *name, char *params, char *bytecode) {
     if (params == NULL)
         printf("function void\n");
     else

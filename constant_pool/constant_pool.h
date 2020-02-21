@@ -16,6 +16,7 @@ typedef struct constant_pool constant_pool;
 *   6. Utf8_info : "()V";
 *   7. Class_info : 8;
 *   8. Utf8_info : "class_name";
+*   9. Utf8_info : "Code";
 */
 extern constant_pool *constant_pool_init(char *name);
 
@@ -41,6 +42,7 @@ extern u2 constant_pool_count(constant_pool *ptr);
 
 extern u2 constant_pool_this(void);
 extern u2 constant_pool_super(void);
+extern u2 constant_pool_code(void);
 
 extern size_t get_sizeof_entry(void *entry);
 

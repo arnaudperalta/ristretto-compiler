@@ -1,18 +1,19 @@
 class_compilerdir = class_compiler/
 constant_pooldir = constant_pool/
+method_pooldir = method_pool/
 field_pooldir = field_pool/
 SHELL=/bin/sh
 LEX=flex
 YACC=bison
 CC=gcc
-CFLAGS=-g -std=c11 -pedantic -Wall -I$(class_compilerdir) -I$(constant_pooldir) -I$(field_pooldir)
+CFLAGS=-g -std=c11 -pedantic -Wall -I$(class_compilerdir) -I$(constant_pooldir) -I$(field_pooldir) -I$(method_pooldir)
 LDFLAGS=-ly
-VPATH = $(class_compilerdir) $(constant_pooldir) $(field_pooldir)
+VPATH = $(class_compilerdir) $(constant_pooldir) $(field_pooldir) $(method_pooldir)
 LEXOPTS=-D_POSIX_SOURCE -DYY_NO_INPUT --nounput
 YACCOPTS=
 PROG=ristretto
 
-all: lex.yy.o $(PROG).tab.o $(class_compilerdir)class_compiler.o $(constant_pooldir)constant_pool.o $(field_pooldir)field_pool.o
+all: lex.yy.o $(PROG).tab.o $(class_compilerdir)class_compiler.o $(constant_pooldir)constant_pool.o $(field_pooldir)field_pool.o $(method_pooldir)method_pool.o
 	$(CC) $+ -o $(PROG) $(LDFLAGS)
 
 lex.yy.c: $(PROG).l $(PROG).tab.h
@@ -27,6 +28,7 @@ $(PROG).tab.c $(PROG).tab.h: $(PROG).y lex.yy.h
 clean:
 	-rm $(PROG) *.o lex.yy.* $(PROG).tab.* *.err *.output *.out *.dot *.class *.vcg
 	
-$(class_compilerdir)class_compiler.o : class_compiler.c class_compiler.h constant_pool.h field_pool.h
+$(class_compilerdir)class_compiler.o : class_compiler.c class_compiler.h constant_pool.h field_pool.h method_pool.h
 $(constant_pooldir)constant_pool.o : constant_pool.c constant_pool.h
 $(field_pooldir)field_pool.o : field_pool.c field_pool.h
+$(method_pooldir)method_pool.o : method_pool.c method_pool.h

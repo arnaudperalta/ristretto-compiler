@@ -171,37 +171,45 @@ int main(int argc, char **argv) {
 // Pour l'instant, on autorise que des Type var = y en dehors des fonctions
 // Permet d'ajouter a la méthode constructeur l'assignement de la valeur
 // La data est limité a un byte
-void add_to_constructor(char *type, char *name, void *data, u2 field_ref) {
-    if (strcmp(type, "I") == 0) {
-        // bipush
-        add_instr_constructor(cc, 0x10);
-        // byte a push
-        u1 byte = *((u1 *) data);
-        add_instr_constructor(cc, byte);
-    } else if (strcmp(type, "Z") == 0) {
-    } else if (strcmp(type, "F") == 0) {
-    } else {
-        return;
+void add_to_constructor(char *type, char *name, void *data, u2 ref_index, u2 data_index) {
+    if (strcmp(type, "Z") == 0) {
+        int b = (data == NULL) ? 0 : *((int *) data);
+        if (b == 1) {
+            add_instr_constructor(cc, 0x04);
+        } else {
+            add_instr_constructor(cc, 0x03);
+        } 
+    } else if (strcmp(type, "F") == 0 || strcmp(type, "I") == 0) {
+        // ldc dans le cas ou la variable est un int ou un float
+        add_instr_constructor(cc, 0x13);
+        // push de la constante en haut du stack
+        add_instr_constructor(cc, data_index >> 8);
+        add_instr_constructor(cc, data_index);
     }
-    // push du byte sur le field_ref associé
+    // push du constante sur le field_ref associé
     add_instr_constructor(cc, 0xb3);
     // Le premier octet du numero de ligne de field_ref
-    add_instr_constructor(cc, field_ref >> 8);
-    add_instr_constructor(cc, field_ref);
+    add_instr_constructor(cc, ref_index >> 8);
+    add_instr_constructor(cc, ref_index);
 }
 
 // On renvoie une erreur bison si le type ne correspond pas a la donnée
+// On appelle cette fonction quand on reconnait une variable globale dans le .ris
 int add_field_to_compiler(char *type, char *name, char *data_type, void *data) {
     if (data_type != NULL && strncmp(type, data_type, 3) != 0) {
         printf("%s %s\n", type, data_type);
         yyerror("Incompatible value for the previous type.");
         return -1;
     }
-    int line = class_compiler_add_field(cc, name, type);
-    // Il ya un assignement de valeur, donc il se fera dans le constructeur
-    if (data_type != NULL) {
-        add_to_constructor(type, name, data, line);
+    u2 ref_index;
+    u2 data_index;
+    if (class_compiler_add_field(cc, name, type, data, &ref_index, &data_index) < 0) {
+        perror("Erreur class compiler add field");
+        return -1;
     }
+    // On ajoute sa valeur dans le constructeur, 
+    // et si data vaut NULL, on lui affectera une valeur par défaut
+    add_to_constructor(type, name, data, ref_index, data_index);
     return 0;
 }
 

@@ -40,11 +40,12 @@ class_compiler *class_compiler_init(char *name) {
     return ptr;
 }
 
-int class_compiler_add_field(class_compiler *cc, char *name, char *type) {
+int class_compiler_add_field(class_compiler *cc, char *name, char *type, void *data, 
+        u2 *ref_index, u2 *data_index) {
     u2 name_index;
     u2 type_index;
-    int field_ref = constant_pool_field_entry(cc->cp, name, type, &name_index, &type_index);
-    if (field_ref < 0) {
+    *ref_index = constant_pool_field_entry(cc->cp, name, type, data, &name_index, &type_index, data_index);
+    if (*ref_index < 0) {
         perror("Erreur field_entry constant pool");
         return -1;
     }
@@ -52,7 +53,7 @@ int class_compiler_add_field(class_compiler *cc, char *name, char *type) {
         perror("Erreur field_entry field pool");
         return -1;
     }
-    return field_ref;
+    return 0;
 }
 
 /*int class_compiler_add_method(class_compiler *cc, char *name, char *type) {

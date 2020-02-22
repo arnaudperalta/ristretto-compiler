@@ -28,7 +28,7 @@ operator    [=][=]|[&][&]|[|][|]|[+]|[-]|[/]|[*]|[%]
 assignment  =
 modify      [=]|[+][=]|[-][=]|[%][=]|[/][=]
 boolcons    true|false
-intcons     [0-9]+
+intcons     [+-]?[0-9]+
 floatcons   [+-]?([0-9]*[.])?[0-9]+
 
 %%
@@ -89,7 +89,7 @@ floatcons   [+-]?([0-9]*[.])?[0-9]+
 }
 {floatcons}  {
     float f = atof(yytext);
-    int *ptr = malloc(sizeof (float));
+    float *ptr = malloc(sizeof (float));
     *ptr = f;
     yylval.constr.data = ptr;
     yylval.constr.type = "F";

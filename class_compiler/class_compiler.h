@@ -15,7 +15,8 @@ typedef struct class_compiler class_compiler;
 
 extern class_compiler *class_compiler_init(char *name);
 
-extern int class_compiler_add_field(class_compiler *cc, char *name, char *type);
+extern int class_compiler_add_field(class_compiler *cc, char *name, char *type, 
+        void *data, u2 *ref_index, u2 *data_index);
 
 // Print dans un fichier <nom>.class le contenu correspondant à 
 // la structure donnée en paramètre (données et son nom).

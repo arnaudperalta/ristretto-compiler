@@ -81,6 +81,8 @@ Class_info *new_class(u2 l);
 Utf8_info *new_utf8(char *string);
 Methodref_info *new_methodref(u2 index, u2 name);
 Fieldref_info *new_fieldref(u2 index, u2 name);
+Integer_info *new_integer(u4 bytes);
+Float_info *new_float(u4 bytes);
 
 constant_pool *constant_pool_init(char *name) {
     constant_pool *ptr = malloc(sizeof (constant_pool));
@@ -182,8 +184,8 @@ int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
     return 0;
 }
 
-int constant_pool_field_entry(constant_pool *ptr, char *name, char *type
-        , u2 *name_index, u2 *type_index) {
+int constant_pool_field_entry(constant_pool *ptr, char *name, char *type, void *data
+        , u2 *name_index, u2 *type_index, u2 *data_index) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
     int fieldref = constant_pool_entry(ptr, new_fieldref(index_this, line_count + 2));
@@ -206,6 +208,20 @@ int constant_pool_field_entry(constant_pool *ptr, char *name, char *type
     *type_index = constant_pool_entry(ptr, new_utf8(type));
     if (*type_index < 0) {
         perror("entry utf8 erreur");
+        return -1;
+    }
+    // x + 5  <Type>_info : <data>;
+    if (strcmp(type, "I") == 0) {
+        u4 integer = (data == NULL) ? 0 : *((u4 *) data);
+        *data_index = constant_pool_entry(ptr, new_integer(integer));
+    } else if (strcmp(type, "F") == 0) {
+        u4 fl = (data == NULL) ? 0.0 : *((u4 *) data);
+        *data_index = constant_pool_entry(ptr, new_float(fl));
+    } else if (strcmp(type, "Z") == 0) {
+        return fieldref;
+    }
+    if (*data_index < 0) {
+        perror("entry integer erreur");
         return -1;
     }
 
@@ -278,6 +294,26 @@ Fieldref_info *new_fieldref(u2 index, u2 name) {
     *ptr = Fieldref_info_default;
     ptr->class_index = index;
     ptr->name_and_type_index = name;
+    return ptr;
+}
+
+Integer_info *new_integer(u4 bytes) {
+    Integer_info *ptr = malloc(sizeof (Integer_info));
+    if (ptr == NULL) {
+        return NULL;
+    }
+    *ptr = Integer_info_default;
+    ptr->bytes = bytes;
+    return ptr;
+}
+
+Float_info *new_float(u4 bytes) {
+    Float_info *ptr = malloc(sizeof (Float_info));
+    if (ptr == NULL) {
+        return NULL;
+    }
+    *ptr = Float_info_default;
+    ptr->bytes = bytes;
     return ptr;
 }
 

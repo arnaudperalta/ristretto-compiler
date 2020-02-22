@@ -1,1 +1,3 @@
-int toto = 3;
+int toto;
+float tata = -3.4;
+boolean lol;

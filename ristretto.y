@@ -185,6 +185,8 @@ void add_to_constructor(char *type, char *name, void *data, u2 ref_index, u2 dat
         // push de la constante en haut du stack
         add_instr_constructor(cc, data_index >> 8);
         add_instr_constructor(cc, data_index);
+    } else {
+        return;
     }
     // push du constante sur le field_ref associé
     add_instr_constructor(cc, 0xb3);

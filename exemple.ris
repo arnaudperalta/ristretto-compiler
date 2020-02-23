@@ -1,3 +1,4 @@
 int toto;
-float tata = -3.4;
+float tata;
 boolean lol;
+void mdr;

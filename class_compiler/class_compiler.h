@@ -8,8 +8,15 @@ typedef unsigned short u2;
 typedef unsigned int u4;
 
 #include "constant_pool.h"
+#include "field_pool.h"
+#include "method_pool.h"
 
-typedef struct class_compiler class_compiler;
+typedef struct class_compiler {
+    char *class_name;
+    constant_pool *cp;
+    field_pool *fp;
+    method_pool *mp;
+} class_compiler;
 
 /* ---------- Fonctions --------- */
 

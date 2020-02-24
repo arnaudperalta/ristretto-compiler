@@ -17,6 +17,7 @@ typedef struct constant_pool constant_pool;
 *   7. Class_info : 8;
 *   8. Utf8_info : "class_name";
 *   9. Utf8_info : "Code";
+*   10. Utf8_info : "<clinit>";
 */
 extern constant_pool *constant_pool_init(char *name);
 
@@ -33,9 +34,12 @@ extern constant_pool *constant_pool_init(char *name);
 *   x + 4. Utf8_info : "I" ;
 *   x + 5  <Type>_info : <data>
 */
-extern int constant_pool_method_entry(constant_pool *ptr, char *name, char *type);
+extern int constant_pool_method_entry(constant_pool *ptr, char *name, char *type,
+        u2 *name_index, u2 *type_index);
 extern int constant_pool_field_entry(constant_pool *ptr, char *name, char *type, void *data
         , u2 *name_index, u2 *type_index, u2 *data_index);
+extern u2 constant_pool_value_entry(constant_pool *ptr, char *type, void *data);
+extern u2 constant_pool_print_entry(constant_pool *ptr, char *type, char *name);
 
 // Renvoie le nombre d'entrée de la structure,
 // ce qui équivaut au numero de la dernière ligne écrite

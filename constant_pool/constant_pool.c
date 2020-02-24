@@ -83,6 +83,7 @@ Methodref_info *new_methodref(u2 index, u2 name);
 Fieldref_info *new_fieldref(u2 index, u2 name);
 Integer_info *new_integer(u4 bytes);
 Float_info *new_float(u4 bytes);
+String_info *new_string(u2 string_index);
 
 constant_pool *constant_pool_init(char *name) {
     constant_pool *ptr = malloc(sizeof (constant_pool));
@@ -145,6 +146,36 @@ constant_pool *constant_pool_init(char *name) {
         perror("entry class erreur");
         return NULL;
     }
+    //11. Fieldref_info : (12, 14);
+    if (constant_pool_entry(ptr, new_fieldref(12, 14)) < 0) {
+        perror("entry class erreur");
+        return NULL;
+    }
+    //12. Class_info : 13;
+    if (constant_pool_entry(ptr, new_class(13)) < 0) {
+        perror("entry class erreur");
+        return NULL;
+    }
+    //13. Utf8 : "java/lang/System"
+    if (constant_pool_entry(ptr, new_utf8("java/lang/System")) < 0) {
+        perror("entry class erreur");
+        return NULL;
+    }
+    //14. NameAndType : (15, 16);
+    if (constant_pool_entry(ptr, new_nameandtype(15, 16)) < 0) {
+        perror("entry nat erreur");
+        return NULL;
+    }
+    //15. Utf8 : "out"
+    if (constant_pool_entry(ptr, new_utf8("out")) < 0) {
+        perror("entry class erreur");
+        return NULL;
+    }
+    //16. Utf8 : "Ljava/io/PrintStream;"
+    if (constant_pool_entry(ptr, new_utf8("Ljava/io/PrintStream;")) < 0) {
+        perror("entry utf8 erreur");
+        return NULL;
+    }
 
     return ptr;
 }
@@ -159,7 +190,8 @@ int constant_pool_entry(constant_pool *ptr, void *entry) {
     return ptr->entry_count; // Renvoie l'index dans la constant pool
 }
 
-int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
+int constant_pool_method_entry(constant_pool *ptr, char *name, char *type,
+        u2 *name_index, u2 *type_index) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
     if (constant_pool_entry(ptr, new_methodref(index_this, line_count + 2)) < 0) {
@@ -172,12 +204,14 @@ int constant_pool_method_entry(constant_pool *ptr, char *name, char *type) {
         return -1;
     }
     // x + 3. Utf8_info : ”fact” ;
-    if (constant_pool_entry(ptr, new_utf8(name)) < 0) {
+    *name_index = constant_pool_entry(ptr, new_utf8(name));
+    if (*name_index < 0) {
         perror("entry utf8 erreur");
         return -1;
     }
     // x + 4. Utf8_info : ”(I)I” ;
-    if (constant_pool_entry(ptr, new_utf8(type)) < 0) {
+    *type_index = constant_pool_entry(ptr, new_utf8(type));
+    if (*type_index < 0) {
         perror("entry utf8 erreur");
         return -1;
     }
@@ -226,6 +260,64 @@ int constant_pool_field_entry(constant_pool *ptr, char *name, char *type, void *
     }
 
     return fieldref;
+}
+
+// Fonction utilisée pour entrer des constantes pour l'execution de
+// l'instruction print et println
+u2 constant_pool_print_entry(constant_pool *ptr, char *type, char *name) {
+    u2 line_count = constant_pool_count(ptr);
+    // x + 1. Methodref_info : (x + 2, x + 4);
+    int methodref = constant_pool_entry(ptr, new_methodref(line_count + 2, line_count + 4));
+    if (methodref < 0) {
+        perror("entry field erreur");
+        return -1;
+    }
+    // x + 2. Class_info : (x + 3);
+    if (constant_pool_entry(ptr, new_class(line_count + 3)) < 0) {
+        perror("entry class erreur");
+        return -1;
+    }
+    // x + 3. Utf8 : "java/io/PrintStream";
+    if (constant_pool_entry(ptr, new_utf8("java/io/PrintStream")) < 0) {
+        perror("entry utf8 erreur");
+        return -1;
+    }
+    // x + 4. NameAndType_info (x + 5, x + 6)
+    if (constant_pool_entry(ptr, new_nameandtype(line_count + 5, line_count + 6)) < 0) {
+        perror("entry utf8 erreur");
+        return -1;
+    }
+    // x + 5. Utf8_info (<name>)
+    if (constant_pool_entry(ptr, new_utf8(name)) < 0) {
+        perror("entry utf8 erreur");
+        return -1;
+    }
+    // x + 6. Utf8_info (<type)
+    if (constant_pool_entry(ptr, new_utf8(type)) < 0) {
+        perror("entry utf8 erreur");
+        return -1;
+    }
+    return methodref;
+}
+
+// Rentre une valeur dans la constante pool et retourne l'index
+u2 constant_pool_value_entry(constant_pool *ptr, char *type, void *data) {
+    if (strcmp(type, "I") == 0) {
+        u4 integer = (data == NULL) ? 0 : *((u4 *) data);
+        return constant_pool_entry(ptr, new_integer(integer));
+    } else if (strcmp(type, "F") == 0) {
+        u4 fl = (data == NULL) ? 0.0 : *((u4 *) data);
+        return constant_pool_entry(ptr, new_float(fl));
+    } else if (strcmp(type, "Ljava/lang/String;") == 0) {
+        char *str = (data == NULL) ? "" : (char *) data;
+        u2 line = constant_pool_entry(ptr, new_utf8(str));
+        if (line < 0) {
+            perror("entry utf8 erreur");
+            return -1;
+        }
+        return constant_pool_entry(ptr, new_string(line));
+    }
+    return 0;
 }
 
 u2 constant_pool_count(constant_pool *ptr) {
@@ -317,6 +409,16 @@ Float_info *new_float(u4 bytes) {
     return ptr;
 }
 
+String_info *new_string(u2 string_index) {
+    String_info *ptr = malloc(sizeof (String_info));
+    if (ptr == NULL) {
+        return NULL;
+    }
+    *ptr = String_info_default;
+    ptr->string_index = string_index;
+    return ptr;
+}
+
 size_t get_sizeof_entry(void *entry) {
     u1 tag = *((u1 *) entry);
     switch(tag) {
@@ -327,6 +429,7 @@ size_t get_sizeof_entry(void *entry) {
         case CONSTANT_NameAndType: return sizeof(NameAndType_info);
         case CONSTANT_Utf8: return sizeof(Utf8_info);
         case CONSTANT_Methodref: return sizeof(Methodref_info);
+        case CONSTANT_String: return sizeof(String_info);
         //string
         default: return 0;
     }
@@ -382,6 +485,12 @@ void _fwrite_methodref(Methodref_info *ptr, FILE *f) {
     fwrite(&ptr->name_and_type_index, sizeof(u2), 1, f);
 }
 
+void _fwrite_string(String_info *ptr, FILE *f) {
+    fwrite(&ptr->tag, sizeof(u1), 1, f);
+    ptr->string_index = htons(ptr->string_index);
+    fwrite(&ptr->string_index, sizeof(u2), 1, f);
+}
+
 void constant_pool_fwrite(constant_pool *ptr, int index, FILE *f) {
     if (index >= ptr->entry_count) {
         perror("Incorrect index");
@@ -411,7 +520,9 @@ void constant_pool_fwrite(constant_pool *ptr, int index, FILE *f) {
         case CONSTANT_Methodref: 
             _fwrite_methodref(info, f);
             break;
-        //string
+        case CONSTANT_String:
+            _fwrite_string(info, f);
+            break;
         default: return;
     }
 }

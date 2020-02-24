@@ -15,13 +15,6 @@ u2 interface_count = htons(0x0000);
 
 void write_in_class(FILE *f, void *arg, size_t size);
 
-struct class_compiler {
-    char *class_name;
-    constant_pool *cp;
-    field_pool *fp;
-    method_pool *mp;
-};
-
 class_compiler *class_compiler_init(char *name) {
     class_compiler *ptr = malloc(sizeof(class_compiler));
     if (ptr == NULL) {

@@ -30,18 +30,22 @@ modify      [=]|[+][=]|[-][=]|[%][=]|[/][=]
 boolcons    true|false
 intcons     [+-]?[0-9]+
 floatcons   [+-]?([0-9]*[.])?[0-9]+
+strcons     \"(?:[^"\\]|\\.)*\"
 
 %%
 
 "//".*      { ; }
 [/][*][^*]*[*]+([^*/][^*]*[*]+)*[/] ;
 [/][*]      { llerror("Unfinished comment."); }
-[(]         { return(OPEN_PAR); }
-[)]         { return(CLOSE_PAR); }
-[{]         { return(OPEN_BRA); }
-[}]         { return(CLOSE_BRA); }
-[;]         { return(PV); }
-[,]         { return(VIRG); }
+[(]         { return OPEN_PAR; }
+[)]         { return CLOSE_PAR; }
+[{]         { return OPEN_BRA; }
+[}]         { return CLOSE_BRA; }
+[;]         { return PV; }
+[,]         { return VIRG; }
+print       { return PRINT; }
+println     { return PRINTLN; }
+return      { return RETURN; }
 [ \t\n]       ;
 
 {type}       {
@@ -94,6 +98,12 @@ floatcons   [+-]?([0-9]*[.])?[0-9]+
     yylval.constr.data = ptr;
     yylval.constr.type = "F";
     return FLOATCONS; 
+}
+{strcons} {
+    yytext[strlen(yytext) - 1] = '\0';
+    yylval.constr.data = strdup(yytext + 1);
+    yylval.constr.type = "Ljava/lang/String;";
+    return STRCONS;
 }
 {identifier} { 
     yylval.text = strdup(yytext); 

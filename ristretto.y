@@ -28,11 +28,22 @@ int add_field_to_compiler(char *type, char *name, char *data_type, void *data);
 int add_funconstant_to_pool(char *type, char *name, char *params);
 void close_constructor(void);
 
+void create_function(char *type, char *name, char *params);
+void add_print_to_func(char *type, char *name, void *value);
+void add_return_to_func(char *type, void *value);
+void close_function(void);
+
 /* Données */
 
 class_compiler *cc;
 method *constr;
 int line_analyse = 0; // Ligne en cours d'analyse, permet de traquer la ligne de l'erreur
+
+/* Données pour la construction de fonction */
+method *to_build;
+u2 locals_count;
+u2 func_name_index;
+u2 func_type_index;
 
 %}
 %union {
@@ -51,8 +62,8 @@ int line_analyse = 0; // Ligne en cours d'analyse, permet de traquer la ligne de
 //Symboles terminaux qui seront fournis par yylex()
 
 %token<text> TYPE IDENTIFIER ARRAY
-%token<constr> BOOLCONS INTCONS FLOATCONS
-%token PV VIRG END_OF_FILE
+%token<constr> BOOLCONS INTCONS FLOATCONS STRCONS
+%token PV VIRG RETURN PRINT PRINTLN
 %token ASSIGNMENT
 %token OPERATOR
 %token OPEN_PAR CLOSE_PAR OPEN_BRA CLOSE_BRA
@@ -80,20 +91,25 @@ Constructeur:
     BOOLCONS { $$ = $1 }
     | FLOATCONS { $$ = $1 }
     | INTCONS { $$ = $1 }
+    | STRCONS { $$ = $1; } 
 
 Function_declar:
-    Type IDENTIFIER Function_param PV {
-        //add_funconstant_to_pool($1, $2, $3);
+    Function_proto OPEN_BRA Function_body CLOSE_BRA {
+        close_function();
     }
-|   Type IDENTIFIER Function_param OPEN_BRA Function_body CLOSE_BRA {
-        //add_funconstant_to_pool($1, $2, $3);
+
+Function_proto:
+    Type IDENTIFIER Function_param {
+        char *func_type = malloc(strlen($3) + 5);
+        sprintf(func_type, "(%s)%s", $3, $1);
+        create_function(func_type, $2, $3);
     }
 
 Function_param:
     OPEN_PAR Type CLOSE_PAR {
-        if (strcmp($2, "void") != 0) 
+        if (strcmp($2, "V") != 0) 
             yyerror("Invalid function prototype, missing identifier.");
-        $$ = NULL;
+        $$ = "";
     }
     | OPEN_PAR Type IDENTIFIER CLOSE_PAR {
         char param[PARAM_LENGTH];
@@ -119,7 +135,26 @@ Function_param:
         $$ = param;
     }
 
-Function_body: ;
+Function_body: 
+    Print Function_body
+    | Return
+    | ;
+
+Print:
+    PRINT Constructeur PV {
+        add_print_to_func($2.type, "print", $2.data);
+    }
+    | PRINTLN Constructeur PV {
+        add_print_to_func($2.type, "println", $2.data);
+    }
+
+Return:
+    RETURN PV {
+        add_return_to_func("V", NULL);
+    }
+    | RETURN Constructeur PV {
+        add_return_to_func($2.type, $2.data);
+    }
 
 Type:
     TYPE {
@@ -219,11 +254,64 @@ void close_constructor(void) {
     close_method_pool(cc);
 }
 
-/*int add_function_to_compiler(char *type, char *name, char *params, char *bytecode) {
-    if (params == NULL)
-        printf("function void\n");
-    else
-        printf("func name : %s params : %s\n", name, params);
-    constant_pool_method_entry(pool, name, type);
-    return 0;
-}*/
+// Initialise dans une nouvelles structure méthode, elle sera rempli grace aux autres structures
+void create_function(char *type, char *name, char *params) {
+    locals_count = 1;
+    if (strcmp(name, "main") == 0) {
+        type = strdup("([Ljava/lang/String;)V");
+    }
+    // On compte le nombre d'occurence de ; dans les parametres
+    // ce qu'il nous donnera le nombre de variable locales dans le prototype
+    for (int i = 0; i < strlen(params); ++i) {
+        if (params[i] == ',') locals_count++ ;
+    }
+    for (locals_count=1; params[locals_count]; params[locals_count] == ',' ? locals_count++ : *params++);
+    to_build = method_create();
+    constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
+}
+
+// On vérifie le type du retour, on renvoie un erreur si ce n'est pas compatible
+// avec la déclaration de la fonction
+void add_return_to_func(char *type, void *value) {
+    if (strcmp(type, "I") == 0) {
+        u2 index = constant_pool_value_entry(cc->cp, type, value);
+        // ldc_w
+        method_instruction(to_build, 0x13);
+        // Index de la value dans la constante pool
+        method_instruction(to_build, index >> 8);
+        method_instruction(to_build, index);
+        // ireturn
+        method_instruction(to_build, 0xac);
+    } else if (strcmp(type, "V") == 0) {
+        // return
+        method_instruction(to_build, 0xb1);
+    }
+}
+
+// Ajoute une instruction print a la fonction en cours d'édition
+void add_print_to_func(char *type, char *name, void *value) {
+    // getstatic : Chargement de la classe System.out
+    method_instruction(to_build, 0xb2);
+    method_instruction(to_build, 0x00);
+    method_instruction(to_build, 0x0b);
+    // Chargement de la value en haut de la pile
+    u2 index = constant_pool_value_entry(cc->cp, type, value);
+    // ldc_w
+    method_instruction(to_build, 0x13);
+    // Index de la value dans la constante pool
+    method_instruction(to_build, index >> 8);
+    method_instruction(to_build, index);
+    // création de la méthode dans le  constante pool avec le bon type
+    char method_type[strlen(type) + 5];
+    sprintf(method_type, "(%s)V", type);
+    index = constant_pool_print_entry(cc->cp, method_type, name);
+    // Execution du print
+    method_instruction(to_build, 0xb6);
+    method_instruction(to_build, index >> 8);
+    method_instruction(to_build, index);
+}
+
+void close_function(void) {
+    method_pool_entry(cc->mp, 0x0009, func_name_index, func_type_index, locals_count, 
+            method_render(to_build), method_length(to_build));
+}

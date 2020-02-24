@@ -165,7 +165,7 @@ void method_pool_fwrite(method_pool *ptr, size_t index, FILE *f) {
 // Terminaison de la method pool en 
 void method_pool_end(method_pool *ptr) {
     method_instruction(ptr->clinit, 0xb1);
-    if (method_pool_entry(ptr, 0x0001, 10, 6, 1, method_render(ptr->clinit), method_length(ptr->clinit)) != 0) {
+    if (method_pool_entry(ptr, 0x0009, 10, 6, 1, method_render(ptr->clinit), method_length(ptr->clinit)) != 0) {
         perror("Methode ini");
     }
 }

@@ -1,4 +1,8 @@
-int toto;
+int toto = 5;
 float tata;
 boolean lol;
-void mdr;
+
+void main(void) {
+    println "LOLOLOL";
+    return;
+}

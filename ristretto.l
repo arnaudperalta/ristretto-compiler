@@ -24,12 +24,11 @@ int llerror(char *s) {
 type        int|boolean|float|void
 array       \[\]|\[\]\[\]
 identifier  [_a-zA-Z][_a-zA-Z0-9]*
-operator    [=][=]|[&][&]|[|][|]|[+]|[-]|[/]|[*]|[%]
 assignment  =
 modify      [=]|[+][=]|[-][=]|[%][=]|[/][=]
 boolcons    true|false
-intcons     [+-]?[0-9]+
-floatcons   [+-]?([0-9]*[.])?[0-9]+
+intcons     [-]?[0-9]+
+floatcons   [-]?([0-9]*[.])?[0-9]+
 strcons     \"(?:[^"\\]|\\.)*\"
 
 %%
@@ -37,14 +36,18 @@ strcons     \"(?:[^"\\]|\\.)*\"
 "//".*      { ; }
 [/][*][^*]*[*]+([^*/][^*]*[*]+)*[/] ;
 [/][*]      { llerror("Unfinished comment."); }
+[+]         { yylval.text = strdup(yytext); return PLUS; }
+[-]         { yylval.text = strdup(yytext); return MOINS; }
+[*]         { yylval.text = strdup(yytext); return MUL; }
+[/]         { yylval.text = strdup(yytext); return DIV; }
 [(]         { return OPEN_PAR; }
 [)]         { return CLOSE_PAR; }
 [{]         { return OPEN_BRA; }
 [}]         { return CLOSE_BRA; }
 [;]         { return PV; }
 [,]         { return VIRG; }
-print       { return PRINT; }
-println     { return PRINTLN; }
+print       { yylval.text = strdup("print"); return PRINT; }
+println     { yylval.text = strdup("println"); return PRINTLN; }
 return      { return RETURN; }
 [ \t\n]       ;
 
@@ -72,7 +75,6 @@ return      { return RETURN; }
     }
     return ARRAY;
 }
-{operator}   { return OPERATOR; }
 {assignment} { return ASSIGNMENT; }
 {intcons}    {
     int i = atoi(yytext);

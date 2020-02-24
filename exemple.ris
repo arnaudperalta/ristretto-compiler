@@ -1,8 +1,7 @@
-int toto = 5;
-float tata;
-boolean lol;
-
 void main(void) {
-    println "LOLOLOL";
+    int a = 5;
+    int b = 3;
+    println a;
+    println b;
     return;
 }

@@ -6,6 +6,7 @@
 
 #define POOL_SIZE 512
 #define BYTECODE_LENGTH 2048
+#define MAX_LOCALS 50
 
 typedef struct Method_info {
     u2 access_flags;
@@ -23,7 +24,14 @@ typedef struct Method_info {
     u2 code_attributes_count;
 } Method_info;
 
+typedef struct local {
+    char *name;
+    char *type;
+} local;
+
 struct method {
+    local **locals;
+    u2 locals_count;
     u1 *bcode;
     int length;
 };
@@ -35,7 +43,7 @@ struct method_pool {
 };
 
 // Créé un structure method qui acceuille du byte code
-method *method_create(void) {
+method *method_create(char *params) {
     method *new = malloc(sizeof (method));
     if (new == NULL) {
         perror("Erreur malloc");
@@ -46,8 +54,34 @@ method *method_create(void) {
         perror("Erreur malloc");
         return NULL;
     }
+    new->locals = malloc(sizeof(local *) * MAX_LOCALS);
+    if (new->locals == NULL) {
+        return NULL;
+    }
     new->length = 0;
+    new->locals_count = 0;
+    char *save; // point de sauvegarde pour strtok_r
+    char *str = strtok_r(params, ",", &save);
+    while (str != NULL) {
+        char *type = strtok(str, ";");
+        char *name = strtok(NULL, ";");
+        method_add_local(new, type, name);
+        str = strtok_r(NULL, ",", &save);
+    }
     return new;
+}
+
+// On enregistre une variable locale dans la structure methode
+int method_add_local(method *ptr, char *type, char *name) {
+    local *l = malloc(sizeof(local));
+    if (l == NULL) {
+        return -1;
+    }
+    l->type = strdup(type);
+    l->name = strdup(name);
+    ptr->locals[ptr->locals_count] = l;
+    ptr->locals_count++;
+    return ptr->locals_count - 1;
 }
 
 // Ajoute une insctruction byte code codé sur un octet a la méthode
@@ -64,6 +98,21 @@ int method_length(method *ptr) {
     return ptr->length;
 }
 
+u2 method_locals_count(method *ptr) {
+    return ptr->locals_count;
+}
+
+// Retourne l'indice de la variable locale recherchée, si rien trouvé on renvoie -1
+int method_search_local(method *ptr, char *name, char *type) {
+    for (int i = 0; i < ptr->locals_count; ++i) {
+        if (strcmp(ptr->locals[i]->name, name) == 0) {
+            strcpy(type, ptr->locals[i]->type);
+            return i;
+        }
+    }
+    return -1;
+}
+
 method_pool *method_pool_init(void) {
     method_pool *ptr = malloc(sizeof(method_pool));
     if (ptr == NULL) {
@@ -74,7 +123,7 @@ method_pool *method_pool_init(void) {
     ptr->pool = malloc(sizeof(Method_info *) * POOL_SIZE);
 
     // Initialisation méthode instanciation(init)
-    method *ini = method_create();
+    method *ini = method_create("");
     // 0: aload_0
     method_instruction(ini, 0x2a);
     // 1: invokespecial 0x0001
@@ -88,7 +137,7 @@ method_pool *method_pool_init(void) {
         return NULL;
     }
     // Initialisation constructeur (clinit), on ne la met pas dans la pool
-    ptr->clinit = method_create();
+    ptr->clinit = method_create("");
     return ptr;
 }
 

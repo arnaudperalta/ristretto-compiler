@@ -19,10 +19,14 @@ extern void method_pool_fwrite(method_pool *ptr, size_t index, FILE *f);
 
 /* ---- Fonctions method ---- */
 
-extern method *method_create(void);
+extern method *method_create(char *params);
 extern void method_instruction(method *ptr, u1 instr);
 extern u1 *method_render(method *ptr);
 extern int method_length(method *ptr);
+extern int method_add_local(method *ptr, char *type, char *name);
+extern u2 method_locals_count(method *ptr);
+// On stocke dans type le type trouvé
+extern int method_search_local(method *ptr, char *name, char *type);
 extern void method_pool_end(method_pool *ptr);
 
 #endif

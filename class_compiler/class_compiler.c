@@ -42,17 +42,12 @@ int class_compiler_add_field(class_compiler *cc, char *name, char *type, void *d
         perror("Erreur field_entry constant pool");
         return -1;
     }
-    if (field_pool_entry(cc->fp, name_index, type_index) != 0) {
+    if (field_pool_entry(cc->fp, type, name, name_index, type_index, *ref_index) != 0) {
         perror("Erreur field_entry field pool");
         return -1;
     }
-    return 0;
+    return *ref_index;
 }
-
-/*int class_compiler_add_method(class_compiler *cc, char *name, char *type) {
-    method_pool_entry();
-    return 0;
-}*/
 
 int class_compiler_print(class_compiler *ptr) {
     char filename[strlen(ptr->class_name) + strlen(".class") + 1];
@@ -108,10 +103,6 @@ int class_compiler_print(class_compiler *ptr) {
 
 void write_in_class(FILE *f, void *arg, size_t size) {
     fwrite(arg, size, 1, f);
-}
-
-void add_instr_constructor(class_compiler *cc, u1 instr) {
-    method_pool_add_clinit(cc->mp, instr);
 }
 
 void close_method_pool(class_compiler *cc) {

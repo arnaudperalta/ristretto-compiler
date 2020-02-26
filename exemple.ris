@@ -1,7 +1,10 @@
+int poto = 3 + 3;
+
+int add(int toto, int titi) {
+    return poto + 1;
+}
+
 void main(void) {
-    int a = 5;
-    int b = 3;
-    println a;
-    println b;
+    println add(0, 1);
     return;
 }

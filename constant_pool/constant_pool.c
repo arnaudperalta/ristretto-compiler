@@ -190,11 +190,13 @@ int constant_pool_entry(constant_pool *ptr, void *entry) {
     return ptr->entry_count; // Renvoie l'index dans la constant pool
 }
 
+// Renvoie methodref
 int constant_pool_method_entry(constant_pool *ptr, char *name, char *type,
         u2 *name_index, u2 *type_index) {
     u2 line_count = constant_pool_count(ptr);
     // x + 1. Methodref_info : (7, 2);
-    if (constant_pool_entry(ptr, new_methodref(index_this, line_count + 2)) < 0) {
+    u2 methodref = constant_pool_entry(ptr, new_methodref(index_this, line_count + 2));
+    if (methodref < 0) {
         perror("entry method erreur");
         return -1;
     }
@@ -215,7 +217,7 @@ int constant_pool_method_entry(constant_pool *ptr, char *name, char *type,
         perror("entry utf8 erreur");
         return -1;
     }
-    return 0;
+    return methodref;
 }
 
 int constant_pool_field_entry(constant_pool *ptr, char *name, char *type, void *data

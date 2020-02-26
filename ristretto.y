@@ -29,23 +29,27 @@ int add_funconstant_to_pool(char *type, char *name, char *params);
 void close_constructor(void);
 
 void create_function(char *type, char *name, char *params);
-void add_variable_to_func(char *type, char *name, void *value);
+void add_variable_to_func(char *type, char *name);
+void modify_local_to_func(char *name);
+void modify_global_to_func(u2 index);
 void init_print_to_func(void);
 void add_print_to_func(char *type, char *name);
 void stack_value_to_func(char *type, void *value);
 void stack_operator_to_func(char *operator, char *type);
-void stack_local_to_func(char *name);
-void add_return_to_func(char *type, void *value);
+char *stack_local_to_func(char *name);
+void stack_funcall_to_func(char *name);
+void stack_global_to_func(u2 index);
+void add_return_to_func(char *type);
 void close_function(void);
 
 /* Données */
 
 class_compiler *cc;
-method *constr;
 int line_analyse = 0; // Ligne en cours d'analyse, permet de traquer la ligne de l'erreur
 
 /* Données pour la construction de fonction */
 method *to_build;
+method *clinit; // Constructeur
 u2 locals_count;
 u2 func_name_index;
 u2 func_type_index;
@@ -54,6 +58,7 @@ u2 func_type_index;
 %union {
     struct {
         char *type;
+        char *name;
         void *data;
         int line;
     } constr;
@@ -71,26 +76,29 @@ u2 func_type_index;
 %token PV VIRG RETURN
 %token ASSIGNMENT
 %token OPEN_PAR CLOSE_PAR OPEN_BRA CLOSE_BRA
-%type<constr> Constructeur Expression
-%type<text> Function_param Type Print Field
+%type<constr> Constructeur Expression Function Function_call_params
+%type<text> Function_param Type Print Variable
 %left<text> PLUS MOINS
 %left<text> MUL DIV
+
+%start S
 
 %%
 // --------- Début de la grammaire ---------
 S: 
-    Global_variable_declar S
-|   Function_declar S
-|   ;
+    Function_declar S
+    | Global_variable_declar S
+    |   ;
 
 // Enregistrement d'une variable
 Global_variable_declar: 
-    Type IDENTIFIER ASSIGNMENT Constructeur PV { 
-        line_analyse = $4.line;
-        add_field_to_compiler($1, $2, $4.type, $4.data);
+    Type IDENTIFIER ASSIGNMENT Expression PV {
+        int index = add_field_to_compiler($1, $2, $4.type, $4.data);
+        modify_global_to_func(index);
     }
     | Type IDENTIFIER PV {
-        add_field_to_compiler($1, $2, NULL, NULL);
+        int index = add_field_to_compiler($1, $2, NULL, NULL);
+        modify_global_to_func(index);
     }
 
 // Constructeur de données
@@ -106,66 +114,53 @@ Function_declar:
     }
 
 Function_proto:
-    Type IDENTIFIER Function_param {
-        char *func_type = malloc(strlen($3) + 5);
+    Type IDENTIFIER OPEN_PAR Function_param CLOSE_PAR {
+        char *func_type = malloc(strlen($4) + 5);
         sprintf(func_type, "%s", $1);
-        create_function(func_type, $2, $3);
+        create_function(func_type, $2, $4);
     }
 
 Function_param:
-    OPEN_PAR Type CLOSE_PAR {
-        if (strcmp($2, "V") != 0) 
-            yyerror("Invalid function prototype, missing identifier.");
-        $$ = "";
-    }
-    | OPEN_PAR Type IDENTIFIER CLOSE_PAR {
-        char param[PARAM_LENGTH];
-        sprintf(param, "%s;%s,", $2, $3);
+    Function_param VIRG Function_param {
+        char *param = malloc(PARAM_LENGTH);
+        sprintf(param, "%s,%s", $1, $3);
         $$ = param;
-    }
-    | OPEN_PAR Type IDENTIFIER VIRG Function_param CLOSE_PAR {
-        char *str;
-        if ($5 == NULL) {
-            char tab[FUNCTION_PARAM_LENGTH] = "";
-            str = tab;
-        } else {
-            str = $5;
-        }
-        char param[PARAM_LENGTH];
-        sprintf(param, "%s;%s,", $2, $3);
-        strcat(str, param);
-        $$ = str;
     }
     | Type IDENTIFIER {
-        char param[PARAM_LENGTH];
-        sprintf(param, "%s;%s,", $1, $2);
+        char *param = malloc(PARAM_LENGTH);
+        sprintf(param, "%s;%s", $1, $2);
         $$ = param;
+    }
+    | Type {
+        if (strcmp($1, "V") != 0) 
+            yyerror("Invalid function prototype, missing identifier.");
+        $$ = "";
     }
 
 Function_body:
     Variable_declaration Function_body
+    | Variable_modif Function_body
     | Print_expression Function_body
     | Return
     | ;
 
 Variable_declaration:
     Type IDENTIFIER PV {
-        add_variable_to_func($1, $2, NULL);
+        stack_value_to_func($1, NULL);
+        add_variable_to_func($1, $2);
     }
     | TYPE IDENTIFIER ASSIGNMENT Expression PV {
-        add_variable_to_func($1, $2, $4.data);
+        add_variable_to_func($1, $2);
+    }
+
+Variable_modif:
+    IDENTIFIER ASSIGNMENT Expression PV {
+        modify_local_to_func($1);
     }
 
 Print_expression:
     Print Expression PV {
-        // On recherche si la variable existe localement, s
-        char *type = malloc(5);
-        int index = method_search_local(to_build, $2.type, type);
-        if (index < 0) {
-            perror("Rien trouvé");
-            return -1;
-        }
-        add_print_to_func(type, $1);
+        add_print_to_func($2.type, $1);
     }
 
 Print:
@@ -180,10 +175,10 @@ Print:
 
 Return:
     RETURN PV {
-        add_return_to_func("V", NULL);
+        add_return_to_func("V");
     }
     | RETURN Expression PV {
-        add_return_to_func($2.type, $2.data);
+        add_return_to_func($2.type);
     }
 
 Expression:
@@ -191,11 +186,31 @@ Expression:
         stack_value_to_func($1.type, $1.data);
         $$ = $1;
     }
-    | Field {
-        stack_local_to_func($1);
+    | Variable {
+        $$.name = $1;
+        int index = method_search_local(to_build, $1, NULL);
+        if (index < 0) {
+            // On a rien trouvé dans local, on cherche dans les variables globales
+            char *type = malloc(5);
+            index = field_pool_search(cc->fp, $1, type);
+            if (index < 1) {
+                yyerror("Bad variable name");
+                return -1;
+            }
+            stack_global_to_func(index);
+            $$.type = type;
+        } else {
+            $$.type = stack_local_to_func($1);
+        }
+    }
+    | Function { 
+        stack_funcall_to_func($1.name);
+        strtok($1.type, ")");
+        $$.type = strtok(NULL, ")");
     }
     | Expression PLUS Expression {
         if (strcmp($1.type, $3.type) != 0) {
+            printf("dbg : %s %s\n", $1.type, $3.type);
             yyerror("Incorrect operandes type");
             return -1;
         }
@@ -226,9 +241,36 @@ Expression:
         $$ = $2;
     }
 
-Field:
+Variable:
     IDENTIFIER {
         $$ = $1
+    }
+
+Function:
+    IDENTIFIER OPEN_PAR Function_call_params CLOSE_PAR {
+        char *fun_type = method_pool_search(cc->mp, $1);
+        if (fun_type == NULL) {
+            yyerror("Unknown function.");
+        } else {
+            $$.type = fun_type;
+            $$.name = $1;
+        }
+    }
+    | IDENTIFIER OPEN_PAR CLOSE_PAR {
+        char *fun_type = method_pool_search(cc->mp, $1);
+        if (fun_type == NULL) {
+            yyerror("Unknown function.");
+        } else {
+            $$.type = fun_type;
+            $$.name = $1;
+        }
+    }
+
+// On regarde si la variable est locale sinon on chercher dans les globales
+Function_call_params:
+    Function_call_params VIRG Function_call_params
+    | Constructeur {
+        stack_value_to_func($1.type, $1.data);
     }
 
 Type:
@@ -266,7 +308,8 @@ int main(int argc, char **argv) {
         perror("class compiler init erreur");
         return EXIT_FAILURE;
     }
-    //constructor_ini();
+    clinit = method_pool_get_clinit(cc->mp);
+    to_build = clinit;
     yyparse();
     // On termine l'écriture du constructeur
     close_constructor();
@@ -276,10 +319,8 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-// Pour l'instant, on autorise que des Type var = y en dehors des fonctions
 // Permet d'ajouter a la méthode constructeur l'assignement de la valeur
-// La data est limité a un byte
-void add_to_constructor(char *type, char *name, void *data, u2 ref_index, u2 data_index) {
+/*void add_to_constructor(char *type, char *name, void *data, u2 ref_index, u2 data_index) {
     if (strcmp(type, "Z") == 0) {
         int b = (data == NULL) ? 0 : *((int *) data);
         if (b == 1) {
@@ -301,7 +342,7 @@ void add_to_constructor(char *type, char *name, void *data, u2 ref_index, u2 dat
     // Le premier octet du numero de ligne de field_ref
     add_instr_constructor(cc, ref_index >> 8);
     add_instr_constructor(cc, ref_index);
-}
+}*/
 
 // On renvoie une erreur bison si le type ne correspond pas a la donnée
 // On appelle cette fonction quand on reconnait une variable globale dans le .ris
@@ -313,14 +354,16 @@ int add_field_to_compiler(char *type, char *name, char *data_type, void *data) {
     }
     u2 ref_index;
     u2 data_index;
-    if (class_compiler_add_field(cc, name, type, data, &ref_index, &data_index) < 0) {
+    int index = class_compiler_add_field(cc, name, type, data, &ref_index, &data_index);
+    if (index < 0) {
         perror("Erreur class compiler add field");
         return -1;
     }
     // On ajoute sa valeur dans le constructeur, 
     // et si data vaut NULL, on lui affectera une valeur par défaut
-    add_to_constructor(type, name, data, ref_index, data_index);
-    return 0;
+    //add_to_constructor(type, name, data, ref_index, data_index);
+
+    return index;
 }
 
 void close_constructor(void) {
@@ -329,12 +372,14 @@ void close_constructor(void) {
 
 // Initialise dans une nouvelles structure méthode, elle sera rempli grace aux autres structures
 void create_function(char *type, char *name, char *params) {
+    char *locals = strdup(params);
     locals_count = 1;
+    u2 method_ref;
     if (strcmp(name, "main") == 0) {
         type = strdup("([Ljava/lang/String;)V");
-        to_build = method_create("");
+        method_ref = constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
+        to_build = method_create(cc->mp, type, name, "", method_ref);
     } else {
-        to_build = method_create(strdup(params));
         char *par = malloc(strlen(params)); // On établie le type d'entrée de la fonction
         if (par == NULL) {
             perror("Erreur malloc");
@@ -353,32 +398,20 @@ void create_function(char *type, char *name, char *params) {
             return;
         }
         sprintf(type, "(%s)%s", par, ret);
+        method_ref = constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
+        to_build = method_create(cc->mp, type, name, locals, method_ref);
     }
-    constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
 }
 
-void add_variable_to_func(char *type, char *name, void *value) {
+// La variable prendra la valeur présente sur le sommet de la pile
+void add_variable_to_func(char *type, char *name) {
     // On ajoute la variable dans la liste des locals de la méthode
     int index = method_add_local(to_build, type, name);
     if (index < 0) {
         perror("Erreur add local");
         return;
     }
-    // On push sur la pile la value
-    if (value == NULL) {
-        if (strcmp(type, "I") == 0) {
-            int i = 0;
-            stack_value_to_func(type, &i);
-        } else if (strcmp(type, "F") == 0) {
-            float f = 0.0;
-            stack_value_to_func(type, &f);
-        } else {
-            perror("A faire");
-        }
-    } else {
-        stack_value_to_func(type, value);
-    }
-    // On store value dans le numero de local correspondant
+    // On ajoute dans la variable locale la valeur au sommet de la pile
     if (strcmp(type, "I") == 0) {
         // istore
         method_instruction(to_build, 0x36);
@@ -390,18 +423,40 @@ void add_variable_to_func(char *type, char *name, void *value) {
     method_instruction(to_build, (u1) index);
 }
 
+void modify_local_to_func(char *name) {
+    char *type = malloc(5);
+    int index = method_search_local(to_build, name, type);
+    if (index < 0) {
+        perror("Erreur add local");
+        return;
+    }
+    // On ajoute dans la variable locale la valeur au sommet de la pile
+    if (strcmp(type, "I") == 0) {
+        // istore
+        method_instruction(to_build, 0x36);
+    } else if (strcmp(type, "F") == 0) {
+        // fstore
+        method_instruction(to_build, 0x38);
+    }
+    //index
+    method_instruction(to_build, (u1) index);
+}
+
+void modify_global_to_func(u2 index) {
+    method_instruction(to_build, 0xb3);
+    method_instruction(to_build, index >> 8);
+    method_instruction(to_build, index);
+}
+
 // On vérifie le type du retour, on renvoie un erreur si ce n'est pas compatible
 // avec la déclaration de la fonction
-void add_return_to_func(char *type, void *value) {
+void add_return_to_func(char *type) {
     if (strcmp(type, "I") == 0) {
-        u2 index = constant_pool_value_entry(cc->cp, type, value);
-        // ldc_w
-        method_instruction(to_build, 0x13);
-        // Index de la value dans la constante pool
-        method_instruction(to_build, index >> 8);
-        method_instruction(to_build, index);
         // ireturn
         method_instruction(to_build, 0xac);
+    } else if (strcmp(type, "F") == 0) {
+        //freturn
+        method_instruction(to_build, 0xae);
     } else if (strcmp(type, "V") == 0) {
         // return
         method_instruction(to_build, 0xb1);
@@ -429,19 +484,25 @@ void add_print_to_func(char *type, char *name) {
     method_instruction(to_build, index);
 }
 
+// Si value est null, on stack la valeur du type par défaut
 void stack_value_to_func(char *type, void *value) {
-    if (value == NULL) {
-        perror("No value to stack");
-        return;
-    }
     if (strcmp(type, "Z") == 0) {
-        int b =  *((int *) value);
+        int b;
+        if (value == NULL) {
+            b = 0;
+        } else {
+            b = *((int *) value);
+        }
         if (b == 1) {
             method_instruction(to_build, 0x04);
         } else {
             method_instruction(to_build, 0x03);
         } 
     } else if (strcmp(type, "F") == 0 || strcmp(type, "I") == 0) {
+        if (value == NULL) {
+            int i = 0;
+            value = &i;
+        }
         u2 index = constant_pool_value_entry(cc->cp, type, value);
         // ldc dans le cas ou la variable est un int ou un float
         method_instruction(to_build, 0x13);
@@ -487,16 +548,17 @@ void stack_operator_to_func(char *operator, char *type) {
     }
 }
 
-void stack_local_to_func(char *name) {
+// Met une variable local en haut de la pile et renvoye le type de cette variable
+char* stack_local_to_func(char *name) {
     char *type = malloc(5);
     if (type == NULL) {
         perror("Erreur malloc");
-        return;
+        return NULL;
     }
     int index = method_search_local(to_build, name, type);
     if (index < 0) {
         perror("Bad local index");
-        return;
+        return NULL;
     }
     if (strcmp(type, "I") == 0) {
         // iload
@@ -506,9 +568,30 @@ void stack_local_to_func(char *name) {
         method_instruction(to_build, 0x17);
     }
     method_instruction(to_build, (u1) index);
+    return type;
+}
+
+void stack_global_to_func(u2 index) {
+    method_instruction(to_build, 0xb2);
+    method_instruction(to_build, index >> 8);
+    method_instruction(to_build, index);
+}
+
+// On ne prend que le nom de la fonction car on aura stacké les parametres avant
+// de stacker l'appel
+void stack_funcall_to_func(char *name) {
+    u2 index = method_pool_get_index(cc->mp, name);
+    if (index == 0) {
+        perror("Cant stack function");
+    }
+    //invokestatic
+    method_instruction(to_build, 0xb8);
+    method_instruction(to_build, index >> 8);
+    method_instruction(to_build, index);
 }
 
 void close_function(void) {
     method_pool_entry(cc->mp, 0x0009, func_name_index, func_type_index, method_locals_count(to_build), 
             method_render(to_build), method_length(to_build));
+    to_build = clinit;
 }

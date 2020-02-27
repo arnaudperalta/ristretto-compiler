@@ -1,6 +1,8 @@
 #ifndef CONSTPOOL__H
 #define CONSTPOOL__H
 
+#include <stddef.h>
+
 typedef struct constant_pool constant_pool;
 
 #include "class_compiler.h"

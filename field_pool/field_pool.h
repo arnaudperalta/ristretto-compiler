@@ -1,6 +1,9 @@
 #ifndef FIELDPOOL__H
 #define FIELDPOOL__H
 
+#include <stddef.h>
+#include <stdio.h>
+
 typedef struct field_pool field_pool;
 
 extern field_pool *field_pool_init(void);

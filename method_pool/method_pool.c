@@ -8,6 +8,9 @@
 #define BYTECODE_LENGTH 2048
 #define MAX_LOCALS 50
 
+// TODO: Récuperer l'index du bytecode lorsqu' on écrit un if
+// puis l'orsqu'on atteint la fin du if, on édite ce morceau de byte cod
+
 typedef struct Method_info {
     u2 access_flags;
     u2 name_index;

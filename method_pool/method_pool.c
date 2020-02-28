@@ -103,6 +103,10 @@ void method_instruction(method *ptr, u1 instr) {
     ptr->length += 1;
 }
 
+void method_instruction_modify(method *ptr, u2 index, u1 instr) {
+    ptr->bcode[index] = instr;
+}
+
 u1 *method_render(method *ptr) {
     return ptr->bcode;
 }

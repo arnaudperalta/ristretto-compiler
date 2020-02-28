@@ -43,12 +43,12 @@ void close_constructor(void);
 
 %token<text> TYPE IDENTIFIER ARRAY PRINT PRINTLN
 %token<constr> BOOLCONS INTCONS FLOATCONS STRCONS
-%token PV VIRG RETURN
+%token PV VIRG RETURN IF
 %token ASSIGNMENT
 %token OPEN_PAR CLOSE_PAR OPEN_BRA CLOSE_BRA
 %type<constr> Constructeur Expression Function Function_call_params
 %type<text> Function_param Type Print Variable
-%left<text> PLUS MOINS
+%left<text> PLUS MOINS EQUAL
 %left<text> MUL DIV
 
 %start S
@@ -110,6 +110,7 @@ Function_param:
 Function_body:
     Variable_declaration Function_body
     | Variable_modif Function_body
+    | Condition Function_body
     | Print_expression Function_body
     | Return
     | ;
@@ -126,6 +127,19 @@ Variable_declaration:
 Variable_modif:
     IDENTIFIER ASSIGNMENT Expression PV {
         modify_local_to_func($1);
+    }
+
+Condition:
+    IF OPEN_PAR Expression CLOSE_PAR If_begin Function_body If_end
+
+If_begin:
+    OPEN_BRA {
+        init_condition(is);
+    }
+
+If_end:
+    CLOSE_BRA {
+        finish_condition(is);
     }
 
 Print_expression:
@@ -158,10 +172,10 @@ Expression:
     }
     | Variable {
         $$.name = $1;
-        int index = method_search_local(to_build, $1, NULL);
+        char *type = malloc(5);
+        int index = method_search_local(to_build, $1, type);
         if (index < 0) {
             // On a rien trouvé dans local, on cherche dans les variables globales
-            char *type = malloc(5);
             index = field_pool_search(cc->fp, $1, type);
             if (index < 1) {
                 yyerror("Bad variable name");
@@ -173,9 +187,9 @@ Expression:
             $$.type = stack_local_to_func($1);
         }
     }
-    | Function { 
+    | Function {
         stack_funcall_to_func($1.name);
-        strtok($1.type, ")");
+        strtok(strdup($1.type), ")");
         $$.type = strtok(NULL, ")");
     }
     | Expression PLUS Expression {
@@ -201,6 +215,13 @@ Expression:
         stack_operator_to_func($2, $1.type);
     }
     | Expression DIV Expression {
+        if (strcmp($1.type, $3.type) != 0) {
+            yyerror("Incorrect operandes type");
+            return -1;
+        }
+        stack_operator_to_func($2, $1.type);
+    }
+    | Expression EQUAL Expression {
         if (strcmp($1.type, $3.type) != 0) {
             yyerror("Incorrect operandes type");
             return -1;
@@ -239,9 +260,7 @@ Function:
 // On regarde si la variable est locale sinon on chercher dans les globales
 Function_call_params:
     Function_call_params VIRG Function_call_params
-    | Constructeur {
-        stack_value_to_func($1.type, $1.data);
-    }
+    | Expression
 
 Type:
     TYPE {

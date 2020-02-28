@@ -40,6 +40,7 @@ strcons     \"(?:[^"\\]|\\.)*\"
 [-]         { yylval.text = strdup(yytext); return MOINS; }
 [*]         { yylval.text = strdup(yytext); return MUL; }
 [/]         { yylval.text = strdup(yytext); return DIV; }
+==          { yylval.text = strdup(yytext); return EQUAL; }
 [(]         { return OPEN_PAR; }
 [)]         { return CLOSE_PAR; }
 [{]         { return OPEN_BRA; }
@@ -48,6 +49,7 @@ strcons     \"(?:[^"\\]|\\.)*\"
 [,]         { return VIRG; }
 print       { yylval.text = strdup("print"); return PRINT; }
 println     { yylval.text = strdup("println"); return PRINTLN; }
+if          { return IF; }
 return      { return RETURN; }
 [ \t\n]       ;
 

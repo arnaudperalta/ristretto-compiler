@@ -3,6 +3,34 @@
 #include <string.h>
 #include "stack_manager.h"
 
+#define STACK_HEIGHT 20
+
+struct if_stack {
+    u2 stack_size;
+    u2 *stack;
+};
+
+if_stack *if_stack_ini() {
+    if_stack *ptr = malloc(sizeof(if_stack));
+    if (ptr == NULL) {
+        return NULL;
+    }
+    ptr->stack_size = 0;
+    ptr->stack = malloc(sizeof(int) * STACK_HEIGHT);
+    return ptr;
+}
+
+// Push un numéro de bytecode dans la pile
+void if_stack_push(if_stack *ptr, u2 n) {
+    ptr->stack[ptr->stack_size] = n;
+    ptr->stack_size++;
+}
+
+u2 if_stack_pop(if_stack *ptr) {
+    ptr->stack_size--;
+    return ptr->stack[ptr->stack_size];
+}
+
 // Initialise dans une nouvelles structure méthode, elle sera rempli grace aux autres structures
 void create_function(char *type, char *name, char *params) {
     char *locals = strdup(params);
@@ -34,6 +62,7 @@ void create_function(char *type, char *name, char *params) {
         method_ref = constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
         to_build = method_create(cc->mp, type, name, locals, method_ref);
     }
+    is = if_stack_ini();
 }
 
 // La variable prendra la valeur présente sur le sommet de la pile
@@ -79,6 +108,21 @@ void modify_global_to_func(u2 index) {
     method_instruction(to_build, 0xb3);
     method_instruction(to_build, index >> 8);
     method_instruction(to_build, index);
+}
+
+void init_condition(if_stack *ptr) {
+    // ifne
+    method_instruction(to_build, 0x9a);
+    if_stack_push(ptr, method_length(to_build));
+    method_instruction(to_build, 0x00);
+    method_instruction(to_build, 0x00);
+}
+
+void finish_condition(if_stack *ptr) {
+    u2 line = if_stack_pop(ptr);
+    u2 value = method_length(to_build) - line + 1;
+    method_instruction_modify(to_build, line, value >> 8);
+    method_instruction_modify(to_build, line + 1, value);
 }
 
 // On vérifie le type du retour, on renvoie un erreur si ce n'est pas compatible
@@ -142,6 +186,17 @@ void stack_value_to_func(char *type, void *value) {
         // push de la constante en haut du stack
         method_instruction(to_build, index >> 8);
         method_instruction(to_build, index);
+    } else if (strncmp(type, "Ljava", 5) == 0) {
+        if (value == NULL) {
+            u1 c = 0;
+            value = &c;
+        }
+        u2 index = constant_pool_value_entry(cc->cp, type, value);
+        // ldc_w
+        method_instruction(to_build, 0x13);
+        // Index de la value dans la constante pool
+        method_instruction(to_build, index >> 8);
+        method_instruction(to_build, index);
     }
 }
 
@@ -164,19 +219,27 @@ void stack_operator_to_func(char *operator, char *type) {
         }
     } else if (strcmp(operator, "*") == 0) {
         if (strcmp(type, "I") == 0) {
-            //isub
+            //imul
             method_instruction(to_build, 0x68);
         } else if (strcmp(type, "F") == 0) {
-            //fsub
+            //fmul
             method_instruction(to_build, 0x6a);
         }
     } else if (strcmp(operator, "/") == 0) {
         if (strcmp(type, "I") == 0) {
-            //isub
+            //idiv
             method_instruction(to_build, 0x6c);
         } else if (strcmp(type, "F") == 0) {
-            //fsub
+            //fdiv
             method_instruction(to_build, 0x6e);
+        }
+    } else if (strcmp(operator, "==") == 0) {
+        if (strcmp(type, "I") == 0) {
+            //isub
+            method_instruction(to_build, 0x64);
+        } else if (strcmp(type, "F") == 0) {
+            //fsub
+            method_instruction(to_build, 0x66);
         }
     }
 }

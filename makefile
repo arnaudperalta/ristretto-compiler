@@ -29,8 +29,8 @@ $(PROG).tab.c $(PROG).tab.h: $(PROG).y lex.yy.h
 clean:
 	-rm $(PROG) *.o lex.yy.* $(PROG).tab.* *.err *.output *.out *.dot *.class *.vcg
 	
-$(class_compilerdir)class_compiler.o : class_compiler.c class_compiler.h constant_pool.h field_pool.h method_pool.h
+$(class_compilerdir)class_compiler.o : class_compiler.c class_compiler.h constant_pool.h field_pool.h method_pool.h stack_manager.h
 $(constant_pooldir)constant_pool.o : constant_pool.c constant_pool.h
 $(field_pooldir)field_pool.o : field_pool.c field_pool.h
 $(method_pooldir)method_pool.o : method_pool.c method_pool.h
-$(stack_manadir)stack_manager.o : stack_manager.c stack_manager.h
+$(stack_manadir)stack_manager.o : stack_manager.c stack_manager.h class_compiler.h

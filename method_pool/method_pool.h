@@ -21,6 +21,7 @@ extern void method_pool_fwrite(method_pool *ptr, size_t index, FILE *f);
 
 extern method *method_create(method_pool *ptr, char *type, char *name, char *params, u2 method_ref);
 extern void method_instruction(method *ptr, u1 instr);
+extern void method_instruction_modify(method *ptr, u2 index, u1 instr);
 extern u1 *method_render(method *ptr);
 extern int method_length(method *ptr);
 extern int method_add_local(method *ptr, char *type, char *name);

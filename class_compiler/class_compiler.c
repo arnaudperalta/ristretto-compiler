@@ -6,6 +6,7 @@
 #include "constant_pool.h"
 #include "field_pool.h"
 #include "method_pool.h"
+#include "stack_manager.h"
 
 u4 magic = htonl(0xCAFEBABE);
 u2 mineur = htons(0x0000);

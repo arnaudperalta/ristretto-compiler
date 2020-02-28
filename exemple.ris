@@ -1,10 +1,12 @@
-int poto = 3 + 3;
-
-int add(int toto, int titi) {
-    return poto + 1;
+int fact(int n) {
+    if (n == 0) {
+        return 1;
+    }
+    return n * fact(n - 1);
 }
 
 void main(void) {
-    println add(0, 1);
+    print "Le résultat est ";
+    println fact(4);
     return;
 }

@@ -1,12 +1,23 @@
-int fact(int n) {
+/*int fact(int n) {
     if (n == 0) {
         return 1;
     }
     return n * fact(n - 1);
 }
 
+int toto(int tata) {
+    return tata;
+}
+
 void main(void) {
     print "Le résultat est ";
-    println fact(4);
-    return;
+    println fact(4) + toto(5);
+}*/
+
+void main(void) {
+    if (1==0) {
+        println "toto";
+    } else {
+        println "tata";
+    }
 }

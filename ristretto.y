@@ -43,7 +43,7 @@ void close_constructor(void);
 
 %token<text> TYPE IDENTIFIER ARRAY PRINT PRINTLN
 %token<constr> BOOLCONS INTCONS FLOATCONS STRCONS
-%token PV VIRG RETURN IF
+%token PV VIRG RETURN IF ELSE
 %token ASSIGNMENT
 %token OPEN_PAR CLOSE_PAR OPEN_BRA CLOSE_BRA
 %type<constr> Constructeur Expression Function Function_call_params
@@ -130,14 +130,39 @@ Variable_modif:
     }
 
 Condition:
-    IF OPEN_PAR Expression CLOSE_PAR If_begin Function_body If_end
+    If_init OPEN_PAR Expression CLOSE_PAR If_begin Function_body If_end Else
+
+If_init: 
+    IF {
+        // On push un 0 sur le stack, car si on ne rentre pas dans ce if
+        // on pourra rentrer dans le else
+        method_instruction(to_build, 0x03);
+    }
 
 If_begin:
     OPEN_BRA {
         init_condition(is);
+        // En rentrant dans le if on push un 1 pour ne pas rentrer dans le else
+        // on pop le 0 d'avant
+        method_instruction(to_build, 0x57);
+        method_instruction(to_build, 0x04);
     }
 
 If_end:
+    CLOSE_BRA {
+        finish_condition(is);
+    }
+
+Else:
+    ELSE Else_begin Function_body Else_end
+    | ;
+
+Else_begin:
+    OPEN_BRA {
+        init_condition(is);
+    }
+
+Else_end:
     CLOSE_BRA {
         finish_condition(is);
     }
@@ -331,5 +356,5 @@ int add_field_to_compiler(char *type, char *name, char *data_type, void *data) {
 }
 
 void close_constructor(void) {
-    close_method_pool(cc);
+    method_pool_end(cc->mp);
 }

@@ -115,6 +115,10 @@ int method_length(method *ptr) {
     return ptr->length;
 }
 
+char *method_type(method *ptr) {
+    return ptr->type;
+}
+
 u2 method_locals_count(method *ptr) {
     return ptr->locals_count;
 }
@@ -255,7 +259,7 @@ u2 method_pool_get_index(method_pool *ptr, char *name) {
     return 0;
 }
 
-// Terminaison de la method pool en 
+// Terminaison de la method clinit en ajoutant un return
 void method_pool_end(method_pool *ptr) {
     method_instruction(ptr->clinit, 0xb1);
     if (method_pool_entry(ptr, 0x0009, 10, 6, 1, method_render(ptr->clinit), method_length(ptr->clinit)) != 0) {

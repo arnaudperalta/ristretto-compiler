@@ -24,6 +24,7 @@ extern void method_instruction(method *ptr, u1 instr);
 extern void method_instruction_modify(method *ptr, u2 index, u1 instr);
 extern u1 *method_render(method *ptr);
 extern int method_length(method *ptr);
+extern char *method_type(method *ptr);
 extern int method_add_local(method *ptr, char *type, char *name);
 extern u2 method_locals_count(method *ptr);
 // On stocke dans type le type trouvé

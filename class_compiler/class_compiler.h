@@ -31,6 +31,4 @@ extern int class_compiler_print(class_compiler *ptr);
 
 extern void constant_pool_fwrite(constant_pool *ptr, int index, FILE *f);
 
-extern void close_method_pool(class_compiler *cc);
-
 #endif

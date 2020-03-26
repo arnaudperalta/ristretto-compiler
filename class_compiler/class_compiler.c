@@ -105,7 +105,3 @@ int class_compiler_print(class_compiler *ptr) {
 void write_in_class(FILE *f, void *arg, size_t size) {
     fwrite(arg, size, 1, f);
 }
-
-void close_method_pool(class_compiler *cc) {
-    method_pool_end(cc->mp);
-}

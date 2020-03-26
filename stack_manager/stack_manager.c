@@ -287,6 +287,12 @@ void stack_funcall_to_func(char *name) {
 }
 
 void close_function(void) {
+    char *type = method_type(to_build);
+    int type_len = strlen(type);
+    // On ajoute un return si la fonction est de type void
+    if (type[type_len - 1] == 'V') {
+        method_instruction(to_build, 0xb1);
+    }
     method_pool_entry(cc->mp, 0x0009, func_name_index, func_type_index, method_locals_count(to_build), 
             method_render(to_build), method_length(to_build));
     to_build = clinit;

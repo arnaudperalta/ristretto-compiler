@@ -50,6 +50,7 @@ strcons     \"(?:[^"\\]|\\.)*\"
 print       { yylval.text = strdup("print"); return PRINT; }
 println     { yylval.text = strdup("println"); return PRINTLN; }
 if          { return IF; }
+else        { return ELSE; }
 return      { return RETURN; }
 [ \t\n]       ;
 

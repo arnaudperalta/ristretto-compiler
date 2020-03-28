@@ -43,13 +43,15 @@ void close_constructor(void);
 
 %token<text> TYPE IDENTIFIER ARRAY PRINT PRINTLN
 %token<constr> BOOLCONS INTCONS FLOATCONS STRCONS
-%token PV VIRG RETURN IF ELSE
+%token PV VIRG RETURN IF ELSE WHILE
 %token ASSIGNMENT
 %token OPEN_PAR CLOSE_PAR OPEN_BRA CLOSE_BRA
 %type<constr> Constructeur Expression Function Function_call_params
 %type<text> Function_param Type Print Variable
-%left<text> PLUS MOINS EQUAL
-%left<text> MUL DIV
+%left<text> OR
+%right<text> AND
+%left<text> PLUS MOINS CMP
+%left<text> MUL DIV NOT
 
 %start S
 
@@ -111,6 +113,7 @@ Function_body:
     Variable_declaration Function_body
     | Variable_modif Function_body
     | Condition Function_body
+    | Loop Function_body
     | Print_expression Function_body
     | Return
     | ;
@@ -165,6 +168,24 @@ Else_begin:
 Else_end:
     CLOSE_BRA {
         finish_condition(is);
+    }
+
+Loop:
+    While_init OPEN_PAR Expression CLOSE_PAR While_begin Function_body While_end
+
+While_init:
+    WHILE {
+        init_while(ws);
+    }
+
+While_begin:
+    OPEN_BRA {
+        begin_while(ws);
+    }
+
+While_end:
+    CLOSE_BRA {
+        finish_while(ws);
     }
 
 Print_expression:
@@ -246,7 +267,21 @@ Expression:
         }
         stack_operator_to_func($2, $1.type);
     }
-    | Expression EQUAL Expression {
+    | Expression CMP Expression {
+        if (strcmp($1.type, $3.type) != 0) {
+            yyerror("Incorrect operandes type");
+            return -1;
+        }
+        stack_operator_to_func($2, $1.type);
+    }
+    | Expression AND Expression {
+        if (strcmp($1.type, $3.type) != 0) {
+            yyerror("Incorrect operandes type");
+            return -1;
+        }
+        stack_operator_to_func($2, $1.type);
+    }
+    | Expression OR Expression {
         if (strcmp($1.type, $3.type) != 0) {
             yyerror("Incorrect operandes type");
             return -1;
@@ -255,6 +290,9 @@ Expression:
     }
     | OPEN_PAR Expression CLOSE_PAR {
         $$ = $2;
+    }
+    | NOT Expression {
+        stack_operator_to_func($1, $2.type);
     }
 
 Variable:
@@ -300,7 +338,7 @@ Type:
 %%
 
 int yyerror(char *s) {
-    printf("Ristretto parsing : Syntax error at line ?\nReason : %s\n", s);
+    printf("Ristretto parsing : Syntax error. Reason : %s\n", s);
     return 0;
 }
 

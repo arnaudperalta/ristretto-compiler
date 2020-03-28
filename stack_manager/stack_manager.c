@@ -10,7 +10,12 @@ struct if_stack {
     u2 *stack;
 };
 
-if_stack *if_stack_ini() {
+struct while_stack {
+    u2 stack_size;
+    u2 *stack;
+};
+
+if_stack *if_stack_ini(void) {
     if_stack *ptr = malloc(sizeof(if_stack));
     if (ptr == NULL) {
         return NULL;
@@ -30,6 +35,71 @@ u2 if_stack_pop(if_stack *ptr) {
     ptr->stack_size--;
     return ptr->stack[ptr->stack_size];
 }
+
+void init_condition(if_stack *ptr) {
+    // ifle
+    method_instruction(to_build, 0x9e);
+    if_stack_push(ptr, method_length(to_build));
+    method_instruction(to_build, 0x00);
+    method_instruction(to_build, 0x00);
+}
+
+void finish_condition(if_stack *ptr) {
+    u2 line = if_stack_pop(ptr);
+    u2 value = method_length(to_build) - line + 1;
+    method_instruction_modify(to_build, line, value >> 8);
+    method_instruction_modify(to_build, line + 1, value);
+}
+
+while_stack *while_stack_ini(void) {
+    while_stack *ptr = malloc(sizeof(while_stack));
+    if (ptr == NULL) {
+        return NULL;
+    }
+    ptr->stack_size = 0;
+    ptr->stack = malloc(sizeof(int) * STACK_HEIGHT);
+    return ptr;
+}
+
+void while_stack_push(while_stack *ptr, u2 n) {
+    ptr->stack[ptr->stack_size] = n;
+    ptr->stack_size++;
+}
+
+u2 while_stack_pop(while_stack *ptr) {
+    ptr->stack_size--;
+    return ptr->stack[ptr->stack_size];
+}
+
+void init_while(while_stack *ptr) {
+    while_stack_push(ptr, method_length(to_build));
+}
+
+// on stack une deuxieme fois car il faudra modifier la ligne du if puis connaitre
+// la coordonnée du goto
+void begin_while(while_stack *ptr) {
+    // ifle
+    method_instruction(to_build, 0x9e);
+    while_stack_push(ptr, method_length(to_build));
+    method_instruction(to_build, 0x00);
+    method_instruction(to_build, 0x00);
+}
+
+void finish_while(while_stack *ptr) {
+    u2 line = while_stack_pop(ptr);
+    // on insert le goto pour revenir au début de la boucle
+    u2 value = method_length(to_build) - line + 4;
+    // goto
+    method_instruction_modify(to_build, line, value >> 8);
+    method_instruction_modify(to_build, line + 1, value);
+
+    line = while_stack_pop(ptr);
+    value = method_length(to_build) - line;
+    method_instruction(to_build, 0xa7);
+    method_instruction(to_build, -value >> 8);
+    method_instruction(to_build, -value);
+}
+
 
 // Initialise dans une nouvelles structure méthode, elle sera rempli grace aux autres structures
 void create_function(char *type, char *name, char *params) {
@@ -63,6 +133,7 @@ void create_function(char *type, char *name, char *params) {
         to_build = method_create(cc->mp, type, name, locals, method_ref);
     }
     is = if_stack_ini();
+    ws = while_stack_ini();
 }
 
 // La variable prendra la valeur présente sur le sommet de la pile
@@ -108,21 +179,6 @@ void modify_global_to_func(u2 index) {
     method_instruction(to_build, 0xb3);
     method_instruction(to_build, index >> 8);
     method_instruction(to_build, index);
-}
-
-void init_condition(if_stack *ptr) {
-    // ifne
-    method_instruction(to_build, 0x9a);
-    if_stack_push(ptr, method_length(to_build));
-    method_instruction(to_build, 0x00);
-    method_instruction(to_build, 0x00);
-}
-
-void finish_condition(if_stack *ptr) {
-    u2 line = if_stack_pop(ptr);
-    u2 value = method_length(to_build) - line + 1;
-    method_instruction_modify(to_build, line, value >> 8);
-    method_instruction_modify(to_build, line + 1, value);
 }
 
 // On vérifie le type du retour, on renvoie un erreur si ce n'est pas compatible
@@ -234,13 +290,81 @@ void stack_operator_to_func(char *operator, char *type) {
             method_instruction(to_build, 0x6e);
         }
     } else if (strcmp(operator, "==") == 0) {
-        if (strcmp(type, "I") == 0) {
-            //isub
-            method_instruction(to_build, 0x64);
-        } else if (strcmp(type, "F") == 0) {
-            //fsub
-            method_instruction(to_build, 0x66);
-        }
+        // if_icmpeq 0 3
+        method_instruction(to_build, 0x9f);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x07);
+        // iconst_0
+        method_instruction(to_build, 0x03);
+        // goto 2
+        method_instruction(to_build, 0xa7);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x04);
+        // iconst_1
+        method_instruction(to_build, 0x04);
+    } else if (strcmp(operator, "<") == 0) {
+        // if_icmplt 0 3
+        method_instruction(to_build, 0xa1);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x07);
+        // iconst_0
+        method_instruction(to_build, 0x03);
+        // goto 2
+        method_instruction(to_build, 0xa7);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x04);
+        // iconst_1
+        method_instruction(to_build, 0x04);
+    } else if (strcmp(operator, ">") == 0) {
+        // if_icmpgt 0 3
+        method_instruction(to_build, 0xa3);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x07);
+        // iconst_0
+        method_instruction(to_build, 0x03);
+        // goto 2
+        method_instruction(to_build, 0xa7);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x04);
+        // iconst_1
+        method_instruction(to_build, 0x04);
+    } else if (strcmp(operator, "<=") == 0) {
+        // if_icmpgt 0 3
+        method_instruction(to_build, 0xa4);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x07);
+        // iconst_0
+        method_instruction(to_build, 0x03);
+        // goto 2
+        method_instruction(to_build, 0xa7);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x04);
+        // iconst_1
+        method_instruction(to_build, 0x04);
+    } else if (strcmp(operator, ">=") == 0) {
+        // if_icmpgt 0 3
+        method_instruction(to_build, 0xa2);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x07);
+        // iconst_0
+        method_instruction(to_build, 0x03);
+        // goto 2
+        method_instruction(to_build, 0xa7);
+        method_instruction(to_build, 0x00);
+        method_instruction(to_build, 0x04);
+        // iconst_1
+        method_instruction(to_build, 0x04);
+    } else if (strcmp(operator, "&&") == 0) {
+        //iand
+        method_instruction(to_build, 0x7e);
+    } else if (strcmp(operator, "||") == 0) {
+        //ior
+        method_instruction(to_build, 0x80);
+    } else if (strcmp(operator, "!") == 0) {
+        // iconst_1
+        method_instruction(to_build, 0x04);
+        // ixor
+        method_instruction(to_build, 0x82);
     }
 }
 

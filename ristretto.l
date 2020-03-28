@@ -25,7 +25,7 @@ type        int|boolean|float|void
 array       \[\]|\[\]\[\]
 identifier  [_a-zA-Z][_a-zA-Z0-9]*
 assignment  =
-modify      [=]|[+][=]|[-][=]|[%][=]|[/][=]
+cmp         [<]|[>]|<=|>=|==
 boolcons    true|false
 intcons     [-]?[0-9]+
 floatcons   [-]?([0-9]*[.])?[0-9]+
@@ -40,19 +40,23 @@ strcons     \"(?:[^"\\]|\\.)*\"
 [-]         { yylval.text = strdup(yytext); return MOINS; }
 [*]         { yylval.text = strdup(yytext); return MUL; }
 [/]         { yylval.text = strdup(yytext); return DIV; }
-==          { yylval.text = strdup(yytext); return EQUAL; }
+&&          { yylval.text = strdup(yytext); return AND; }
+\|\|          { yylval.text = strdup(yytext); return OR; }
+[!]         { yylval.text = strdup(yytext); return NOT; }
 [(]         { return OPEN_PAR; }
 [)]         { return CLOSE_PAR; }
 [{]         { return OPEN_BRA; }
 [}]         { return CLOSE_BRA; }
 [;]         { return PV; }
 [,]         { return VIRG; }
+
 print       { yylval.text = strdup("print"); return PRINT; }
 println     { yylval.text = strdup("println"); return PRINTLN; }
 if          { return IF; }
 else        { return ELSE; }
+while       { return WHILE; }
 return      { return RETURN; }
-[ \t\n]       ;
+[ \t\n]     ;
 
 {type}       {
     if (strcmp(yytext, "int") == 0) {
@@ -113,6 +117,10 @@ return      { return RETURN; }
 {identifier} { 
     yylval.text = strdup(yytext); 
     return IDENTIFIER; 
+}
+{cmp} { 
+    yylval.text = strdup(yytext);
+    return CMP; 
 }
 
 %%

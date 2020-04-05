@@ -114,7 +114,7 @@ return      { return RETURN; }
     yylval.constr.type = "Ljava/lang/String;";
     return STRCONS;
 }
-{identifier} { 
+{identifier} {
     yylval.text = strdup(yytext); 
     return IDENTIFIER; 
 }

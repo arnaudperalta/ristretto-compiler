@@ -2,17 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include "class_compiler.h"
 #include "constant_pool.h"
 #include "field_pool.h"
 #include "method_pool.h"
 #include "stack_manager.h"
-
-u4 magic = htonl(0xCAFEBABE);
-u2 mineur = htons(0x0000);
-u2 majeur = htons(0x0034);
-u2 access_flags = htons(0x0009); // 0x0001 |= 0x0008
-u2 interface_count = htons(0x0000);
 
 void write_in_class(FILE *f, void *arg, size_t size);
 
@@ -51,6 +46,13 @@ int class_compiler_add_field(class_compiler *cc, char *name, char *type, void *d
 }
 
 int class_compiler_print(class_compiler *ptr) {
+
+    u4 magic = htonl(0xCAFEBABE);
+    u2 mineur = htons(0x0000);
+    u2 majeur = htons(0x0034);
+    u2 access_flags = htons(0x0009); // 0x0001 |= 0x0008
+    u2 interface_count = htons(0x0000);
+  
     char filename[strlen(ptr->class_name) + strlen(".class") + 1];
     sprintf(filename, "%s.class", ptr->class_name);
     FILE *f = fopen(filename, "wb");

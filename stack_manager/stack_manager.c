@@ -103,11 +103,10 @@ void finish_while(while_stack *ptr) {
 
 // Initialise dans une nouvelles structure méthode, elle sera rempli grace aux autres structures
 void create_function(char *type, char *name, char *params) {
-    char *locals = strdup(params);
     locals_count = 1;
     u2 method_ref;
     if (strcmp(name, "main") == 0) {
-        type = strdup("([Ljava/lang/String;)V");
+        strcpy(type, "([Ljava/lang/String;)V");
         method_ref = constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
         to_build = method_create(cc->mp, type, name, "", method_ref);
     } else {
@@ -122,7 +121,11 @@ void create_function(char *type, char *name, char *params) {
             strncat(par, member, (int) (strchr(member, ';') - member));
             member = strtok(NULL, ",");
         }
-        char *ret = strdup(type);
+        char *ret = malloc(strlen(type) + 1);
+        if(ret)
+        {
+            strcpy(ret, type);
+        }
         type = malloc(strlen(params));
         if (type == NULL) {
             perror("Erreur malloc");
@@ -130,7 +133,7 @@ void create_function(char *type, char *name, char *params) {
         }
         sprintf(type, "(%s)%s", par, ret);
         method_ref = constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
-        to_build = method_create(cc->mp, type, name, locals, method_ref);
+        to_build = method_create(cc->mp, type, name, params, method_ref);
     }
     is = if_stack_ini();
     ws = while_stack_ini();

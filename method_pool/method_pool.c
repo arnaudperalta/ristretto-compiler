@@ -1,13 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include "class_compiler.h"
 #include "method_pool.h"
+#define _XOPEN_SOURCE  600
+#define _POSIX_C_SOURCE 1
 
 #define POOL_SIZE 512
 #define BYTECODE_LENGTH 2048
 #define MAX_LOCALS 50
 
+extern char *strtok_r(char *, const char *, char **);
 // TODO: Récuperer l'index du bytecode lorsqu' on écrit un if
 // puis l'orsqu'on atteint la fin du if, on édite ce morceau de byte cod
 
@@ -90,8 +95,18 @@ int method_add_local(method *ptr, char *type, char *name) {
     if (l == NULL) {
         return -1;
     }
-    l->type = strdup(type);
-    l->name = strdup(name);
+    char *type_dup = malloc(strlen(type) + 1);
+    if(type_dup)
+    {
+        strcpy(type_dup, type);
+    }
+    char *name_dup = malloc(strlen(name) + 1);
+    if(name_dup)
+    {
+        strcpy(name_dup, name);
+    }
+    l->type = type_dup;
+    l->name = name_dup;
     ptr->locals[ptr->locals_count] = l;
     ptr->locals_count++;
     return ptr->locals_count - 1;

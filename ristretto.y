@@ -75,9 +75,9 @@ Global_variable_declar:
 
 // Constructeur de données
 Constructeur:
-    BOOLCONS { $$ = $1 }
-    | FLOATCONS { $$ = $1 }
-    | INTCONS { $$ = $1 }
+    BOOLCONS { $$ = $1; }
+    | FLOATCONS { $$ = $1; }
+    | INTCONS { $$ = $1; }
     | STRCONS { $$ = $1; }
 
 Function_declar:
@@ -235,7 +235,12 @@ Expression:
     }
     | Function {
         stack_funcall_to_func($1.name);
-        strtok(strdup($1.type), ")");
+        char *type_dup = malloc(strlen($1.type) + 1);
+        if(type_dup)
+        {
+            strcpy(type_dup, $1.type);
+        }
+        strtok(type_dup, ")");
         $$.type = strtok(NULL, ")");
     }
     | Expression PLUS Expression {
@@ -297,7 +302,7 @@ Expression:
 
 Variable:
     IDENTIFIER {
-        $$ = $1
+        $$ = $1;
     }
 
 Function:
@@ -354,7 +359,6 @@ int main(int argc, char **argv) {
     }
     char *token = strtok(argv[1], ".");
     token[0] = toupper(token[0]);
-
     cc = class_compiler_init(token);
     if (cc == NULL) {
         perror("class compiler init erreur");

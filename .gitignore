@@ -8,3 +8,4 @@ ressources/
 .DS_Store
 *.class
 .vscode/
+*.log

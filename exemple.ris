@@ -1,4 +1,4 @@
-float pi_approach(int n) {
+/*float pi_approach(int n) {
   float i = 1.0;
   int a = 0;
   int b = 1;
@@ -24,18 +24,15 @@ float pi_approach(int n) {
   result = result;
   println result;
   return result;
-}
-
-
-
+}*/
 
 int main(void) {
-  println pi_approach(15);
-  if(true) {
-    println "oui";
-  }
-  else {
-    println "non";
-  }
+    //println pi_approach(15);
+    if (false) {
+        println "oui";
+    }
+    else {
+        println "non";
+    }
 }
 

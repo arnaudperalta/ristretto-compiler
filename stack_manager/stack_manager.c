@@ -4,6 +4,7 @@
 #include "stack_manager.h"
 
 #define STACK_HEIGHT 20
+#define ARGV_NAME    "([Ljava/lang/String;)V"
 
 struct if_stack {
     u2 stack_size;
@@ -106,7 +107,9 @@ void create_function(char *type, char *name, char *params) {
     locals_count = 1;
     u2 method_ref;
     if (strcmp(name, "main") == 0) {
-        strcpy(type, "([Ljava/lang/String;)V");
+        free(type);
+        type = malloc(strlen(ARGV_NAME));
+        strcpy(type, ARGV_NAME);
         method_ref = constant_pool_method_entry(cc->cp, name, type, &func_name_index, &func_type_index);
         to_build = method_create(cc->mp, type, name, "", method_ref);
     } else {
@@ -154,6 +157,9 @@ void add_variable_to_func(char *type, char *name) {
     } else if (strcmp(type, "F") == 0) {
         // fstore
         method_instruction(to_build, 0x38);
+    } else if (strcmp(type, "Z") == 0) {
+        // istore
+        method_instruction(to_build, 0x36);
     }
     //index
     method_instruction(to_build, (u1) index);
@@ -173,6 +179,9 @@ void modify_local_to_func(char *name) {
     } else if (strcmp(type, "F") == 0) {
         // fstore
         method_instruction(to_build, 0x38);
+    } else if (strcmp(type, "Z") == 0) {
+        // istore
+        method_instruction(to_build, 0x36);
     }
     //index
     method_instruction(to_build, (u1) index);
@@ -389,6 +398,9 @@ char* stack_local_to_func(char *name) {
     } else if (strcmp(type, "F") == 0) {
         // fload
         method_instruction(to_build, 0x17);
+    } else if (strcmp(type, "Z") == 0) {
+        // iload
+        method_instruction(to_build, 0x15);
     }
     method_instruction(to_build, (u1) index);
     return type;

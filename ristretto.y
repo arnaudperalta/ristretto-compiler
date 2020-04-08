@@ -115,6 +115,7 @@ Function_body:
     | Condition Function_body
     | Loop Function_body
     | Print_expression Function_body
+    | Function_call Function_body
     | Return
     | ;
 
@@ -139,7 +140,7 @@ If_init:
     IF {
         // On push un 0 sur le stack, car si on ne rentre pas dans ce if
         // on pourra rentrer dans le else
-        method_instruction(to_build, 0x03);
+        method_instruction(to_build, 0x04);
     }
 
 If_begin:
@@ -148,7 +149,7 @@ If_begin:
         // En rentrant dans le if on push un 1 pour ne pas rentrer dans le else
         // on pop le 0 d'avant
         method_instruction(to_build, 0x57);
-        method_instruction(to_build, 0x04);
+        method_instruction(to_build, 0x03);
     }
 
 If_end:
@@ -303,6 +304,11 @@ Expression:
 Variable:
     IDENTIFIER {
         $$ = $1;
+    }
+
+Function_call:
+    Function PV {
+        stack_funcall_to_func($1.name);
     }
 
 Function:

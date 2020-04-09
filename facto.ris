@@ -5,6 +5,6 @@ int facto(int n) {
 	return facto(n - 1) * n;
 }
 
-int main(void) {
+void main(void) {
 	println facto(5);
 }

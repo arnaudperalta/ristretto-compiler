@@ -15,6 +15,6 @@ void gregory_leibniz(int n) {
 	}
 }
 
-int main(void) {
+void main(void) {
 	gregory_leibniz(50000);
 }

@@ -1,5 +1,5 @@
 # ristretto-compiler
-## Simplist C Language compiler for JVM
+Simplist C Language compiler for JVM
 
 ## Manual
 
@@ -28,10 +28,16 @@ void main(void) {
 ### Output instructions
 ```c
 void main(void) {
-    print "Ce message s'affiche";
+    print "Ce message s'affiche ";
     print "sur la même ligne";
     println "Je viens de sauter une ligne";
 }
+```
+
+Output :
+```
+Ce message s'affiche sur la même ligne
+Je viens de sauter une ligne
 ```
 
 ### Global variables

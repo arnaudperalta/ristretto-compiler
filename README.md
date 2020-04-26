@@ -29,8 +29,8 @@ void main(void) {
 ```c
 void main(void) {
     print "Ce message s'affiche ";
-    print "sur la même ligne";
-    println "Je viens de sauter une ligne";
+    println "sur la même ligne";
+    print "Je viens de sauter une ligne";
 }
 ```
 

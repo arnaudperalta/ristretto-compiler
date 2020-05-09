@@ -47,7 +47,7 @@ void close_constructor(void);
 %token ASSIGNMENT
 %token OPEN_PAR CLOSE_PAR OPEN_BRA CLOSE_BRA
 %type<constr> Constructeur Expression Function Function_call_params
-%type<text> Function_param Type Print Variable
+%type<text> Function_param Type Print Variable Parametre
 %left<text> OR
 %right<text> AND
 %left<text> PLUS MOINS CMP
@@ -93,12 +93,17 @@ Function_proto:
     }
 
 Function_param:
-    Function_param VIRG Function_param {
+    Function_param VIRG Parametre {
         char *param = malloc(PARAM_LENGTH);
         sprintf(param, "%s,%s", $1, $3);
         $$ = param;
     }
-    | Type IDENTIFIER {
+    | Parametre {
+        $$ = $1;
+    }
+
+Parametre:
+    Type IDENTIFIER {
         char *param = malloc(PARAM_LENGTH);
         sprintf(param, "%s;%s", $1, $2);
         $$ = param;
@@ -124,7 +129,7 @@ Variable_declaration:
         stack_value_to_func($1, NULL);
         add_variable_to_func($1, $2);
     }
-    | TYPE IDENTIFIER ASSIGNMENT Expression PV {
+    | Type IDENTIFIER ASSIGNMENT Expression PV {
         add_variable_to_func($1, $2);
     }
 
@@ -333,7 +338,7 @@ Function:
 
 // On regarde si la variable est locale sinon on chercher dans les globales
 Function_call_params:
-    Function_call_params VIRG Function_call_params
+    Function_call_params VIRG Expression
     | Expression
 
 Type:

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <netinet/in.h>
 #include "constant_pool.h"
 #include "class_compiler.h"
 

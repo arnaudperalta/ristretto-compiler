@@ -9,7 +9,7 @@ LEX=flex
 YACC=bison
 CC=gcc
 CFLAGS=-g -std=c11 -pedantic -Wall -I$(class_compilerdir) -I$(constant_pooldir) -I$(field_pooldir) -I$(method_pooldir) -I$(stack_manadir)
-LDFLAGS=-ly
+LDFLAGS=
 VPATH = $(class_compilerdir) $(constant_pooldir) $(field_pooldir) $(method_pooldir) $(stack_manadir)
 LEXOPTS = -D_POSIX_SOURCE -DYY_NO_INPUT --nounput
 OBJ = *.o $(class_compilerdir)*.o $(constant_pooldir)*.o $(method_pooldir)*.o $(field_pooldir)*.o $(stack_manadir)*.o

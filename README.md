@@ -5,11 +5,11 @@ Simplist C Language compiler for JVM
 
 Compile a .ris file into .class file
 
-`$ ./ristretto factorielle.ris`
+`$ ./ristretto facto.ris`
 
 Execute the obtained .class file with the JVM
 
-`$ java -noverify Factorielle`
+`$ java -noverify Facto`
 
 Observe the content of the obtained .class file
 
